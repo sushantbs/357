@@ -1,0 +1,38 @@
+extends layout
+
+block content
+  h1= title
+
+  #container
+    - if (gameId)
+      input(type='button' id='forfeitbutton' value='Forfeit')
+      #gameboard
+        #rowone(class='row row-one')
+          span
+          span
+          span
+        #rowtwo(class='row row-two')
+          span
+          span
+          span
+          span
+          span
+        #rowthree(class='row row-three')
+          span
+          span
+          span
+          span
+          span
+          span
+          span
+        #gamebuttons
+          input(type='button' id='confirmplay' value='Play')
+          input(type='button' id='cancelplay' value='Clear')
+    - else if (playerName)
+      p Welcome to the GameRoom #{playerName}
+      input(type='button' id='playbutton' value='Play')
+      input(type='button' id='leavebutton' value='Leave')
+    - else
+      input(type='text' id='playername' placeholder='Enter you name')
+      input(type='button' id='registerbutton' value='Register')  
+    

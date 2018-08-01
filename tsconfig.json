@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2017",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "typeRoots": ["../node_modules/@types"],
+    "types": ["core-js"]
+  },
+  "include": ["src/**/*", "app.ts", "socket.ts", "public/**/*"]
+}

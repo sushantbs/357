@@ -1,0 +1,55 @@
+body {
+  padding: 50px;
+  font: 24px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00b7ff;
+}
+
+input[type="button"] {
+  background-color: #00b7ff;
+  color: white;
+  font-size: 18px;
+  padding: 5px 20px;
+  margin: 5px;
+  border-width: 0;
+  border-radius: 4px;
+}
+
+#gameboard {
+  position: relative;
+  display: flex;
+  padding-bottom: 40px;
+}
+
+.row {
+  margin: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+.row span {
+  display: inline-block;
+  width: 60px;
+  height: 60px;
+  margin: 4px;
+  border-radius: 4px;
+}
+
+.row-one span {
+  background-color: red;
+}
+.row-two span {
+  background-color: yellow;
+}
+.row-three span {
+  background-color: green;
+}
+#gamebuttons {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
