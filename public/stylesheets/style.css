@@ -18,14 +18,16 @@ input {
   margin: 5px;
   border: 1px solid gray;
   border-radius: 4px;
-  font-size: 20px;
+  font-size: 16px;
   padding: 2px;
 }
 
 input[type="button"] {
   background-color: rgba(25, 180, 219, 0.9);
+  border: 1px solid rgba(25, 180, 219, 1);
   color: white;
   width: 120px;
+  height: 30px;
 }
 
 #container {
@@ -103,3 +105,35 @@ input[type="button"] {
   position: absolute;
   bottom: 50px;
 }
+
+/* @media screen and (max-width: 980px) {
+  body {
+    font-size: 60px;
+  }
+
+  h1 {
+    text-align: center;
+    margin: 10px auto;
+    font-size: 60px;
+  }
+
+  input {
+    margin: 5px;
+    border: 1px solid gray;
+    border-radius: 4px;
+    font-size: 60px;
+    padding: 2px;
+  }
+
+  input[type="button"] {
+    background-color: rgba(25, 180, 219, 0.9);
+    border: 1px solid rgba(25, 180, 219, 1);
+    color: white;
+    width: 200px;
+    height: 60px;
+  }
+
+  #container {
+    flex-direction: column;
+  }
+} */

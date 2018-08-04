@@ -5,19 +5,20 @@ block content
 
   #container
     - if (gameId)
-      script(type='text/javascript' src='http://localhost:8080/bundle.js')
+      script(type='text/javascript' src='/public/javascripts/polyfill.min.js')
+      script(type='text/javascript' src='/public/javascripts/bundle.76c53.js')
     - else if (playerName)
       #lobby
         p Welcome to the GameRoom #{playerName}
         div#stats
           div
-            span Wins
+            span Wins: 
             span= wins
           div
-            span Losses
+            span Losses: 
             span= losses
           div
-            span Streak
+            span Streak: 
             span= streak
         div
           input(type='button' id='playbutton' value='Play')
