@@ -40,6 +40,10 @@ app.post(
     let playerId = guid();
     req.mySession.playerName = playerName;
     req.mySession.playerId = playerId;
+    req.mySession.wins = 0;
+    req.mySession.losses = 0;
+    req.mySession.streak = 0;
+
     gameManager.registerPlayer({ name: playerName, id: playerId });
     res.send({
       success: true,
@@ -51,7 +55,7 @@ app.post(
 app.post(
   "/validate",
   (req: SessionRequest, res: express.Response, next: express.NextFunction) => {
-    let { playerName } = req.mySession;
+    let { playerName, playerId } = req.mySession;
 
     // in a real app this endpoint can be used to pass a token
     // that can be cross verified when the socket connection is being made.
@@ -70,22 +74,63 @@ app.post("/play", (req: SessionRequest, res: express.Response) => {
   res.send({ success: true, gameId });
 });
 
+app.post("/complete", (req: SessionRequest, res: express.Response) => {
+  let { playerId, gameId } = req.mySession;
+  let winner = gameManager.getGameWinner(gameId);
+  if (winner) {
+    if (winner.id === playerId) {
+      req.mySession.wins += 1;
+      req.mySession.streak += 1;
+    } else {
+      req.mySession.losses += 1;
+      req.mySession.streal = 0;
+    }
+    gameManager.leaveGame(gameId, playerId);
+    delete req.mySession.gameId;
+    res.send({ success: true });
+  } else {
+    res.send({ success: true });
+  }
+});
+
+app.post("/sanitize", (req: SessionRequest, res: express.Response) => {
+  let { playerId, gameId } = req.mySession;
+  gameManager.registerPlayer(playerId);
+  if (!gameManager.hasGame(gameId)) {
+    delete req.mySession.gameId;
+  }
+  res.send({ success: true });
+});
+
 app.post("/leave", (req: SessionRequest, res: express.Response) => {
+  let { playerId, playerName } = req.mySession;
+
+  gameManager.removePlayer({ id: playerId, name: playerName });
   req.mySession.destroy();
   res.send({ success: true });
 });
 
 app.post("/forfeit", (req: SessionRequest, res: express.Response) => {
+  let { gameId, playerId, playerName } = req.mySession;
+  req.mySession.losses += 1;
+  req.mySession.streal = 0;
+
+  gameManager.forfeitGame(gameId, { id: playerId, name: playerName });
   res.send({ success: true });
 });
 
 app.get(
   "/",
   (req: SessionRequest, res: express.Response, next: express.NextFunction) => {
-    let { playerName, gameId } = req.mySession;
+    let { playerName, gameId, wins, losses, streak } = req.mySession;
+    let gameCount = gameManager.getGameCount();
     res.render("index", {
       playerName,
-      gameId
+      gameId,
+      gameCount,
+      wins,
+      losses,
+      streak
     });
   }
 );
@@ -169,45 +214,3 @@ function onListening() {
 }
 
 export default app;
-
-// var createError = require("http-errors");
-// var express = require("express");
-// var path = require("path");
-// var cookieParser = require("cookie-parser");
-// var logger = require("morgan");
-
-// var indexRouter = require("./routes/index");
-// var usersRouter = require("./routes/users");
-
-// var app = express();
-
-// // view engine setup
-// app.set("views", path.join(__dirname, "views"));
-// app.set("view engine", "jade");
-
-// app.use(logger("dev"));
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: false }));
-// app.use(cookieParser());
-// app.use(express.static(path.join(__dirname, "public")));
-
-// app.use("/", indexRouter);
-// app.use("/users", usersRouter);
-
-// // catch 404 and forward to error handler
-// app.use(function(req, res, next) {
-//   next(createError(404));
-// });
-
-// // error handler
-// app.use(function(err, req, res, next) {
-//   // set locals, only providing error in development
-//   res.locals.message = err.message;
-//   res.locals.error = req.app.get("env") === "development" ? err : {};
-
-//   // render the error page
-//   res.status(err.status || 500);
-//   res.render("error");
-// });
-
-// module.exports = app;

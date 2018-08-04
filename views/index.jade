@@ -1,37 +1,27 @@
 extends layout
 
 block content
-  h1= title
+  h1 GameRoom
 
   #container
     - if (gameId)
-      input(type='button' id='forfeitbutton' value='Forfeit')
-      #gameboard
-        #rowone(class='row row-one')
-          span
-          span
-          span
-        #rowtwo(class='row row-two')
-          span
-          span
-          span
-          span
-          span
-        #rowthree(class='row row-three')
-          span
-          span
-          span
-          span
-          span
-          span
-          span
-        #gamebuttons
-          input(type='button' id='confirmplay' value='Play')
-          input(type='button' id='cancelplay' value='Clear')
+      script(type='text/javascript' src='http://localhost:8080/bundle.js')
     - else if (playerName)
-      p Welcome to the GameRoom #{playerName}
-      input(type='button' id='playbutton' value='Play')
-      input(type='button' id='leavebutton' value='Leave')
+      #lobby
+        p Welcome to the GameRoom #{playerName}
+        div#stats
+          div
+            span Wins
+            span= wins
+          div
+            span Losses
+            span= losses
+          div
+            span Streak
+            span= streak
+        div
+          input(type='button' id='playbutton' value='Play')
+          input(type='button' id='leavebutton' value='Leave')
     - else
       input(type='text' id='playername' placeholder='Enter you name')
       input(type='button' id='registerbutton' value='Register')  

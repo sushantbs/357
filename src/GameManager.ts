@@ -10,17 +10,33 @@ interface PlayerType {
 
 interface GameManagerType {
   registerPlayer(p: PlayerType): void;
+  hasGame(gameId: string): boolean;
+  removePlayer(p: PlayerType): void;
+  forfeitGame(gameId: string, p: PlayerType): void;
+  addToWaitingLounge(p: PlayerType): string;
+  getGameWinner(gameId: string): PlayerType;
+  playerConnected(p: PlayerType, gameId: string): void;
+  setSocketServer(io: socket.Server): void;
+  leaveGame(gameId: string, playerId: string): void;
+  getGameCount(): number;
 }
 
 interface GameInterface {
   setId(id: string): void;
   addPlayers(players: PlayerType[]): void;
   playerConnected(player: PlayerType): void;
+  getWinner(): PlayerType;
+  removePlayer(playerId: string): void;
+  forfeit(p: PlayerType): boolean;
+  isEmpty(): boolean;
 }
 
 class Game implements GameInterface {
   private id: string;
   private players: PlayerType[] = [];
+  private turn: number = null;
+  private winner: PlayerType = null;
+  private tiles: [number, number, number] = [3, 5, 7];
 
   public setId(id: string): void {
     this.id = id;
@@ -41,7 +57,14 @@ class Game implements GameInterface {
     );
 
     p.socket = player.socket;
+
+    // This encapsulates the game in a socket.io room
     p.socket.join(this.id);
+
+    p.socket.on("play", (turn: { tiles: [number, number, number] }) => {
+      this.tiles = turn.tiles;
+      this.turnPlayed(turn.tiles, p);
+    });
 
     if (
       this.players.length > 1 &&
@@ -52,10 +75,68 @@ class Game implements GameInterface {
   }
 
   /**
+   * removePlayer
+   */
+  public removePlayer(playerId: string): void {
+    this.players = this.players.filter(player => player.id !== playerId);
+  }
+
+  /**
+   * forfeit
+   */
+  public forfeit({ id }: PlayerType) {
+    let player = this.players.find(p => p.id === id);
+    let otherPlayer = this.players.find(p => p !== player);
+
+    this.winner = otherPlayer;
+    otherPlayer.socket.emit("end", { result: true, forfeit: true });
+    player.socket.emit("end", { result: false, forfeit: true });
+
+    return true;
+  }
+
+  public isEmpty(): boolean {
+    return !this.players.length;
+  }
+
+  public turnPlayed(tiles: number[], player: PlayerType) {
+    let otherPlayer: PlayerType = this.players.find((p, index) => {
+      if (p !== player) {
+        this.turn = index;
+        return true;
+      }
+      return false;
+    });
+    let sum = tiles.reduce((total, num) => total + Number(num), 0);
+    this.turn;
+    otherPlayer.socket.emit("turn", { tiles });
+
+    if (sum === 1) {
+      this.winner = player;
+      otherPlayer.socket.emit("end", { result: false });
+      player.socket.emit("end", { result: true });
+    } else if (!sum) {
+      this.winner = otherPlayer;
+      otherPlayer.socket.emit("end", { result: true });
+      player.socket.emit("end", { result: false });
+    }
+  }
+
+  public getWinner(): PlayerType {
+    return this.winner;
+  }
+
+  /**
    * start
    */
   public start(): void {
-    this.players.forEach(player => player.socket.emit("message", "game start"));
+    this.turn = this.turn !== null ? this.turn : Math.round(Math.random());
+    this.players.forEach((player, index) =>
+      player.socket.emit("start", {
+        tiles: this.tiles,
+        turn: this.turn === index
+      })
+    );
   }
 }
 
@@ -64,7 +145,6 @@ class GameManager implements GameManagerType {
 
   private registeredPlayers: any = new Map();
   private waitingPlayers: any = new Map();
-  private pairedGames: any = new Map();
   private gameMap: any = new Map();
 
   public setSocketServer(io: socket.Server) {
@@ -83,23 +163,31 @@ class GameManager implements GameManagerType {
    * addToWaitingLounge
    */
   public addToWaitingLounge(p: PlayerType) {
-    if (this.registeredPlayers.has(p.id)) {
-      if (!this.waitingPlayers.size) {
-        let gameId = this.setupGame([p]);
-        this.waitingPlayers.set(gameId, [p]);
-        return gameId;
-      } else {
-        let playerKeyVal: string[] = this.waitingPlayers.entries().next().value;
-        let gameId: string = playerKeyVal[0];
-        this.waitingPlayers.delete(gameId);
-        let game = this.gameMap.get(gameId);
-        game.addPlayers([p]);
-        return gameId;
-      }
+    if (!this.waitingPlayers.size) {
+      let gameId = this.setupGame([p]);
+      this.waitingPlayers.set(gameId, [p]);
+      console.log(
+        `Adding player ${p.name}: ${p.id} to the game ${gameId} in wait mode.`
+      );
+      return gameId;
     } else {
-      // Fishy business happening here
-      debugger;
+      let playerKeyVal: string[] = this.waitingPlayers.entries().next().value;
+      let gameId: string = playerKeyVal[0];
+      this.waitingPlayers.delete(gameId);
+      console.log(
+        `Adding player ${p.name}: ${p.id} to the game ${gameId} in game mode.`
+      );
+      let game = this.gameMap.get(gameId);
+      game.addPlayers([p]);
+      return gameId;
     }
+  }
+
+  /**
+   * hasGame
+   */
+  public hasGame(gameId: string) {
+    return this.gameMap.has(gameId);
   }
 
   /**
@@ -117,21 +205,51 @@ class GameManager implements GameManagerType {
 
   public playerConnected(player: PlayerType, gameId: string) {
     let game: GameInterface = this.gameMap.get(gameId);
-    game.playerConnected(player);
+    console.log(
+      `player ${player.name}: ${player.id} has connected to ${gameId}`
+    );
+    if (!game) {
+      player.socket.disconnect();
+    } else {
+      game.playerConnected(player);
+    }
   }
-
-  /**
-   * addPlayerAndStart
-   */
-  public addPlayerAndStart(playerArray: PlayerType[]) {}
 
   /**
    * getGameCount
    */
   public getGameCount(): number {
-    return this.pairedGames.size;
+    return this.gameMap.size;
+  }
+
+  /**
+   * getGameWinner
+   */
+  public getGameWinner(gameId: string): PlayerType {
+    let gameInstance: GameInterface = this.gameMap.get(gameId);
+    if (gameInstance) {
+      return gameInstance.getWinner();
+    }
+  }
+
+  public forfeitGame(gameId: string, p: PlayerType): void {
+    let gameInstance: GameInterface = this.gameMap.get(gameId);
+    if (gameInstance) {
+      gameInstance.forfeit(p);
+    }
+  }
+
+  /**
+   * leaveGame
+   */
+  public leaveGame(gameId: string, playerId: string): void {
+    let gameInstance: GameInterface = this.gameMap.get(gameId);
+    gameInstance.removePlayer(playerId);
+    if (gameInstance.isEmpty()) {
+      this.gameMap.delete(gameId);
+    }
   }
 }
 
-const gameManager = new GameManager();
+const gameManager: GameManagerType = new GameManager();
 export default gameManager;

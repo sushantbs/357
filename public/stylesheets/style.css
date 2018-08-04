@@ -1,55 +1,105 @@
+html,
 body {
-  padding: 50px;
-  font: 24px "Lucida Grande", Helvetica, Arial, sans-serif;
+  font: 14px/1.21 "Helvetica Neue", arial, sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  padding: 0;
+  margin: 0;
+  height: 100%;
 }
 
-a {
-  color: #00b7ff;
+h1 {
+  text-align: center;
+  margin: 10px auto;
+  font-size: 32px;
+}
+
+input {
+  margin: 5px;
+  border: 1px solid gray;
+  border-radius: 4px;
+  font-size: 20px;
+  padding: 2px;
 }
 
 input[type="button"] {
-  background-color: #00b7ff;
+  background-color: rgba(25, 180, 219, 0.9);
   color: white;
-  font-size: 18px;
-  padding: 5px 20px;
-  margin: 5px;
-  border-width: 0;
-  border-radius: 4px;
+  width: 120px;
 }
 
-#gameboard {
-  position: relative;
+#container {
+  width: 100%;
+  height: 100%;
   display: flex;
-  padding-bottom: 40px;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
-.row {
-  margin: 5px;
+#lobby {
   display: flex;
   flex-direction: column;
 }
 
-.row span {
-  display: inline-block;
-  width: 60px;
-  height: 60px;
-  margin: 4px;
-  border-radius: 4px;
+#lobby > div {
+  margin: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
 }
 
-.row-one span {
-  background-color: red;
+.gamecontainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  position: relative;
+  padding-bottom: 40px;
+  box-sizing: border-box;
+  height: 100%;
 }
-.row-two span {
-  background-color: yellow;
-}
-.row-three span {
-  background-color: green;
-}
-#gamebuttons {
+
+.overlay {
   position: absolute;
+  background-color: rgba(25, 180, 219, 0.9);
+  color: white;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  text-align: center;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.gamecontainer .tileColumn {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.gamecontainer .tileColumn.selected {
+  border: 2px solid green;
+}
+
+.gamecontainer .tileColumn span {
+  background-color: rgba(255, 0, 0, 1);
+  height: 60px;
+  width: 60px;
+  opacity: 1;
+  display: inline-block;
+  margin: 5px;
+}
+
+.gamecontainer .tileColumn span.selected {
+  background-color: rgba(255, 0, 0, 0.4);
+}
+
+.gamecontainer .buttons {
+  position: absolute;
+  bottom: 50px;
 }

@@ -5,7 +5,6 @@ window.onload = function() {
   let registerButton = document.getElementById("registerbutton");
   let playButton = document.getElementById("playbutton");
   let leaveButton = document.getElementById("leavebutton");
-  let forfeitButton = document.getElementById("forfeitbutton");
 
   if (registerButton) {
     registerButton.addEventListener("click", async () => {
@@ -64,86 +63,18 @@ window.onload = function() {
 
   if (leaveButton) {
     leaveButton.addEventListener("click", async () => {
-      let response = await fetch("/leave", {
-        method: "post",
-        credentials: "same-origin"
-      });
+      try {
+        await fetch("/leave", {
+          method: "post",
+          credentials: "same-origin"
+        });
 
-      let responseJson = await response.json();
-      window.location.reload();
+        // let responseJson = await response.json();
+        window.location.reload();
+      } catch (err) {
+        console.error(err);
+        throw err;
+      }
     });
-  }
-
-  if (forfeitButton) {
-    forfeitButton.addEventListener("click", async () => {});
-    setupGameCommunication();
   }
 };
-
-async function setupGameCommunication() {
-  let response = await fetch("/validate", {
-    method: "post",
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json"
-    },
-    credentials: "same-origin"
-  });
-
-  let responseJson = await response.json();
-
-  if (responseJson.allowConnection) {
-    establishSocketConnection();
-  }
-}
-
-async function establishSocketConnection() {
-  let response = await fetch("/validate", {
-    method: "post",
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json"
-    },
-    credentials: "same-origin"
-  });
-
-  let responseJson = await response.json();
-
-  if (responseJson.allowConnection) {
-    let socket = io("http://localhost:3000");
-    socket.on("turn", data => {
-      console.log(data);
-    });
-    socket.on("start", data => {
-      console.log(`message: ${data}`);
-      new Game(data);
-    });
-  }
-}
-
-class Game {
-  constructor(initialState = {}) {
-    this.state = initialState;
-    this.initializeGameLogic();
-  }
-
-  initializeGameLogic() {
-    debugger;
-    ["row-one", "row-two", "row-three"].forEach((row, i) =>
-      document
-        .querySelectorAll(`.${row} span`)
-        .forEach((spanEle, j) =>
-          spanEle.addEventListener("click", e => this.addTileToTurn(e, i, j))
-        )
-    );
-
-    //.addEventListener("click", e => this.addTileToTurn(e));
-  }
-
-  addTileToTurn(e, x, y) {
-    let element = e.currentTarget;
-    state.debugger;
-  }
-
-  renderer() {}
-}
