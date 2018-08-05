@@ -29,25 +29,35 @@ app.set("view engine", "jade");
 
 app.use(express.static(__dirname));
 
+interface SessionObject {
+  name: string;
+  id: string;
+  wins: number;
+  losses: number;
+  streak: number;
+  gameId: string;
+  destroy(): void;
+}
+
 interface SessionRequest extends express.Request {
-  mySession: any;
+  mySession: SessionObject;
 }
 
 app.post(
   "/register",
   (req: SessionRequest, res: express.Response, next: express.NextFunction) => {
-    let { playerName } = req.body;
-    let playerId = guid();
-    req.mySession.playerName = playerName;
-    req.mySession.playerId = playerId;
+    let { name } = req.body;
+    let id = guid();
+    req.mySession.name = name;
+    req.mySession.id = id;
     req.mySession.wins = 0;
     req.mySession.losses = 0;
     req.mySession.streak = 0;
 
-    gameManager.registerPlayer({ name: playerName, id: playerId });
+    gameManager.registerPlayer({ name, id });
     res.send({
       success: true,
-      payload: { playerName }
+      payload: { name }
     });
   }
 );
@@ -55,37 +65,37 @@ app.post(
 app.post(
   "/validate",
   (req: SessionRequest, res: express.Response, next: express.NextFunction) => {
-    let { playerName, playerId } = req.mySession;
+    let { name, id } = req.mySession;
 
     // in a real app this endpoint can be used to pass a token
     // that can be cross verified when the socket connection is being made.
     // For now, in the browser, we trust.
-    res.send({ allowConnection: Boolean(playerName) });
+    res.send({ allowConnection: Boolean(name) });
   }
 );
 
 app.post("/play", (req: SessionRequest, res: express.Response) => {
-  let { playerName, playerId } = req.mySession;
+  let { name, id } = req.mySession;
   let gameId = gameManager.addToWaitingLounge({
-    name: playerName,
-    id: playerId
+    name: name,
+    id: id
   });
   req.mySession.gameId = gameId;
   res.send({ success: true, gameId });
 });
 
 app.post("/complete", (req: SessionRequest, res: express.Response) => {
-  let { playerId, gameId } = req.mySession;
+  let { id, gameId } = req.mySession;
   let winner = gameManager.getGameWinner(gameId);
   if (winner) {
-    if (winner.id === playerId) {
+    if (winner.id === id) {
       req.mySession.wins += 1;
       req.mySession.streak += 1;
     } else {
       req.mySession.losses += 1;
-      req.mySession.streal = 0;
+      req.mySession.streak = 0;
     }
-    gameManager.leaveGame(gameId, playerId);
+    gameManager.leaveGame(gameId, id);
     delete req.mySession.gameId;
     res.send({ success: true });
   } else {
@@ -94,8 +104,8 @@ app.post("/complete", (req: SessionRequest, res: express.Response) => {
 });
 
 app.post("/sanitize", (req: SessionRequest, res: express.Response) => {
-  let { playerId, gameId } = req.mySession;
-  gameManager.registerPlayer(playerId);
+  let { id, name, gameId } = req.mySession;
+  gameManager.registerPlayer({ id, name });
   if (!gameManager.hasGame(gameId)) {
     delete req.mySession.gameId;
   }
@@ -103,29 +113,34 @@ app.post("/sanitize", (req: SessionRequest, res: express.Response) => {
 });
 
 app.post("/leave", (req: SessionRequest, res: express.Response) => {
-  let { playerId, playerName } = req.mySession;
+  let { id, name } = req.mySession;
 
-  gameManager.removePlayer({ id: playerId, name: playerName });
+  gameManager.removePlayer({ id, name });
   req.mySession.destroy();
   res.send({ success: true });
 });
 
-app.post("/forfeit", (req: SessionRequest, res: express.Response) => {
-  let { gameId, playerId, playerName } = req.mySession;
-  req.mySession.losses += 1;
-  req.mySession.streal = 0;
+app.post("/cancel", (req: SessionRequest, res: express.Response) => {
+  let { gameId, id } = req.mySession;
+  gameManager.leaveGame(gameId, id);
+  delete req.mySession.gameId;
+  res.send({ success: true });
+});
 
-  gameManager.forfeitGame(gameId, { id: playerId, name: playerName });
+app.post("/forfeit", (req: SessionRequest, res: express.Response) => {
+  let { gameId, id, name } = req.mySession;
+
+  gameManager.forfeitGame(gameId, { id, name });
   res.send({ success: true });
 });
 
 app.get(
   "/",
   (req: SessionRequest, res: express.Response, next: express.NextFunction) => {
-    let { playerName, gameId, wins, losses, streak } = req.mySession;
+    let { name, gameId, wins, losses, streak } = req.mySession;
     let gameCount = gameManager.getGameCount();
     res.render("index", {
-      playerName,
+      name,
       gameId,
       gameCount,
       wins,

@@ -52,6 +52,17 @@ input[type="button"] {
   justify-content: space-around;
 }
 
+input.secondary-button {
+  background-color: white;
+  color: rgb(44, 44, 44);
+}
+
+input.serious-button {
+  background-color: red;
+  color: white;
+  border-color: red;
+}
+
 .gamecontainer {
   display: flex;
   flex-direction: row;
@@ -59,7 +70,7 @@ input[type="button"] {
   position: relative;
   padding-bottom: 40px;
   box-sizing: border-box;
-  height: 100%;
+  height: calc(100% - 40px);
 }
 
 .overlay {
@@ -80,6 +91,7 @@ input[type="button"] {
   display: flex;
   flex-direction: column;
   padding: 4px;
+  height: 500px;
   justify-content: center;
   border: 2px solid white;
 }
@@ -89,7 +101,7 @@ input[type="button"] {
 }
 
 .gamecontainer .tileColumn span {
-  background-color: rgba(255, 0, 0, 1);
+  background-color: rgb(105, 223, 193);
   height: 60px;
   width: 60px;
   opacity: 1;
@@ -98,42 +110,18 @@ input[type="button"] {
 }
 
 .gamecontainer .tileColumn span.selected {
-  background-color: rgba(255, 0, 0, 0.4);
+  background-color: rgba(255, 0, 0, 0.3);
 }
 
 .gamecontainer .buttons {
   position: absolute;
-  bottom: 50px;
+  bottom: 80px;
 }
 
-/* @media screen and (max-width: 980px) {
-  body {
-    font-size: 60px;
-  }
-
-  h1 {
-    text-align: center;
-    margin: 10px auto;
-    font-size: 60px;
-  }
-
-  input {
-    margin: 5px;
-    border: 1px solid gray;
-    border-radius: 4px;
-    font-size: 60px;
-    padding: 2px;
-  }
-
-  input[type="button"] {
-    background-color: rgba(25, 180, 219, 0.9);
-    border: 1px solid rgba(25, 180, 219, 1);
-    color: white;
-    width: 200px;
-    height: 60px;
-  }
-
-  #container {
-    flex-direction: column;
-  }
-} */
+.forfeit-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  bottom: -50px;
+}

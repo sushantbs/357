@@ -18,7 +18,7 @@ window.onload = function() {
             accept: "application/json"
           },
           credentials: "same-origin",
-          body: JSON.stringify({ playerName })
+          body: JSON.stringify({ name: playerName })
         });
 
         let responseJson = await response.json();

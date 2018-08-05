@@ -6,10 +6,10 @@ block content
   #container
     - if (gameId)
       script(type='text/javascript' src='/public/javascripts/polyfill.min.js')
-      script(type='text/javascript' src='/public/javascripts/bundle.76c53.js')
-    - else if (playerName)
+      script(type='text/javascript' src='http://localhost:8080/bundle.js')
+    - else if (name)
       #lobby
-        p Welcome to the GameRoom #{playerName}
+        p Welcome #{name}
         div#stats
           div
             span Wins: 

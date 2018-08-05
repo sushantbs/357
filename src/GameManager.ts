@@ -18,6 +18,7 @@ interface GameManagerType {
   playerConnected(p: PlayerType, gameId: string): void;
   setSocketServer(io: socket.Server): void;
   leaveGame(gameId: string, playerId: string): void;
+  cancelGame(gameId: string, p: PlayerType): void;
   getGameCount(): number;
 }
 
@@ -205,12 +206,17 @@ class GameManager implements GameManagerType {
 
   public playerConnected(player: PlayerType, gameId: string) {
     let game: GameInterface = this.gameMap.get(gameId);
-    console.log(
-      `player ${player.name}: ${player.id} has connected to ${gameId}`
-    );
     if (!game) {
+      console.log(
+        `game ${gameId} does not exist. disconnecting ${player.name}: ${
+          player.id
+        }`
+      );
       player.socket.disconnect();
     } else {
+      console.log(
+        `player ${player.name}: ${player.id} has connected to ${gameId}`
+      );
       game.playerConnected(player);
     }
   }
@@ -240,6 +246,11 @@ class GameManager implements GameManagerType {
   }
 
   /**
+   * cancelGame
+   */
+  public cancelGame() {}
+
+  /**
    * leaveGame
    */
   public leaveGame(gameId: string, playerId: string): void {
@@ -247,6 +258,10 @@ class GameManager implements GameManagerType {
     gameInstance.removePlayer(playerId);
     if (gameInstance.isEmpty()) {
       this.gameMap.delete(gameId);
+      // In case the player cancels a game before anyone joins
+      if (this.waitingPlayers.has(gameId)) {
+        this.waitingPlayers.delete(gameId);
+      }
     }
   }
 }

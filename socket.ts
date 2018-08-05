@@ -35,13 +35,13 @@ export default function(server: Server) {
         { cookieName: "mySession", secret: "BadSecret" },
         cookieObj.mySession
       );
-
-      if (content.playerId && content.gameId) {
+      let { id, name } = content;
+      if (content.id && content.gameId) {
         gameManager.playerConnected(
           {
-            name: content.playerName,
-            id: content.playerId,
-            socket: socket
+            id,
+            name,
+            socket
           },
           content.gameId
         );
