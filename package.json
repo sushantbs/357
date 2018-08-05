@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "start": "ts-node app.ts",
-    "preact": "preact watch",
     "dev": "ts-node-dev app.ts"
   },
   "dependencies": {

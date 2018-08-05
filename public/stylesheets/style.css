@@ -6,6 +6,8 @@ body {
   padding: 0;
   margin: 0;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 h1 {
@@ -32,7 +34,7 @@ input[type="button"] {
 
 #container {
   width: 100%;
-  height: 100%;
+  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,6 +44,7 @@ input[type="button"] {
 #lobby {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 #lobby > div {
@@ -124,4 +127,52 @@ input.serious-button {
   right: 0;
   text-align: center;
   bottom: -50px;
+}
+
+@media screen and (max-width: 980px) {
+  body {
+    font-size: 60px;
+  }
+
+  h1 {
+    font-size: 90px;
+    margin: 20px;
+  }
+
+  input {
+    font-size: 54px;
+  }
+
+  input[type="button"] {
+    width: 250px;
+    height: 80px;
+    margin: 20px;
+  }
+
+  #lobby > #stats {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #stats > div {
+    margin: 10px;
+  }
+
+  .gamecontainer .tileColumn {
+    height: 1200px;
+  }
+
+  .gamecontainer .tileColumn span {
+    height: 120px;
+    width: 120px;
+    margin: 10px;
+  }
+
+  .gamecontainer .buttons {
+    bottom: 280px;
+  }
+
+  .forfeit-container {
+    bottom: -150px;
+  }
 }
