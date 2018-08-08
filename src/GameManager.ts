@@ -14,7 +14,6 @@ interface GameManagerType {
   playerConnected(p: Player, gameId: string): void;
   setSocketServer(io: socket.Server): void;
   leaveGame(gameId: string, playerId: string): void;
-  cancelGame(gameId: string, p: Player): void;
   getGameCount(): number;
 }
 
@@ -37,9 +36,7 @@ class GameManager implements GameManagerType {
     this.registeredPlayers.delete(p.id);
   }
 
-  /**
-   * addToWaitingLounge
-   */
+  /** Live code */
   public addToWaitingLounge(p: Player) {
     if (!this.waitingPlayers.size) {
       let gameId = this.setupGame([p]);
@@ -61,16 +58,7 @@ class GameManager implements GameManagerType {
     }
   }
 
-  /**
-   * hasGame
-   */
-  public hasGame(gameId: string) {
-    return this.gameMap.has(gameId);
-  }
-
-  /**
-   * pairPlayers
-   */
+  /** Live code */
   public setupGame(playerArray: Player[]) {
     let game: Game = new Game();
     let gameId: string = guid();
@@ -81,6 +69,7 @@ class GameManager implements GameManagerType {
     return gameId;
   }
 
+  /** Live code */
   public playerConnected(player: Player, gameId: string) {
     let game: Game = this.gameMap.get(gameId);
     if (!game) {
@@ -122,14 +111,10 @@ class GameManager implements GameManagerType {
     }
   }
 
-  /**
-   * cancelGame
-   */
-  public cancelGame() {}
+  public hasGame(gameId: string) {
+    return this.gameMap.has(gameId);
+  }
 
-  /**
-   * leaveGame
-   */
   public leaveGame(gameId: string, playerId: string): void {
     let gameInstance: Game = this.gameMap.get(gameId);
     gameInstance.removePlayer(playerId);

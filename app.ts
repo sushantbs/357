@@ -28,6 +28,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+/** Live code: The client-sessions middleware */
 app.use(
   sessions({
     secret: "BadSecret",
@@ -40,10 +41,12 @@ app.set("view engine", "jade");
 
 app.use(express.static(__dirname));
 
+/** Live code */
 app.post("/register", registerRoute);
 
 app.post("/validate", validateRoute);
 
+/** Live code */
 app.post("/play", playRoute);
 
 app.post("/complete", completeRoute);
@@ -56,6 +59,7 @@ app.post("/cancel", cancelRoute);
 
 app.post("/forfeit", forfeitRoute);
 
+/** Live code */
 app.get("/", renderRoute);
 
 app.use(errorHandler());
@@ -69,8 +73,8 @@ app.set("port", port);
 /**
  * Create HTTP server.
  */
-
 var server = http.createServer(app);
+
 socketify(server);
 /**
  * Listen on provided port, on all network interfaces.

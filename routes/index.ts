@@ -55,6 +55,7 @@ export const registerRoute: RequestHandler = (
   });
 };
 
+/** Live code */
 export const playRoute: RequestHandler = (
   req: SessionRequest,
   res: Response
