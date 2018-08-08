@@ -1,144 +1,21 @@
 import guid from "./guid";
 import * as socket from "socket.io";
 import { Map } from "core-js";
-
-interface PlayerType {
-  name: string;
-  id: string;
-  socket?: any;
-}
+import Player from "./Player";
+import Game from "./Game";
 
 interface GameManagerType {
-  registerPlayer(p: PlayerType): void;
+  registerPlayer(p: Player): void;
   hasGame(gameId: string): boolean;
-  removePlayer(p: PlayerType): void;
-  forfeitGame(gameId: string, p: PlayerType): void;
-  addToWaitingLounge(p: PlayerType): string;
-  getGameWinner(gameId: string): PlayerType;
-  playerConnected(p: PlayerType, gameId: string): void;
+  removePlayer(p: Player): void;
+  forfeitGame(gameId: string, p: Player): void;
+  addToWaitingLounge(p: Player): string;
+  getGameWinner(gameId: string): Player;
+  playerConnected(p: Player, gameId: string): void;
   setSocketServer(io: socket.Server): void;
   leaveGame(gameId: string, playerId: string): void;
-  cancelGame(gameId: string, p: PlayerType): void;
+  cancelGame(gameId: string, p: Player): void;
   getGameCount(): number;
-}
-
-interface GameInterface {
-  setId(id: string): void;
-  addPlayers(players: PlayerType[]): void;
-  playerConnected(player: PlayerType): void;
-  getWinner(): PlayerType;
-  removePlayer(playerId: string): void;
-  forfeit(p: PlayerType): boolean;
-  isEmpty(): boolean;
-}
-
-class Game implements GameInterface {
-  private id: string;
-  private players: PlayerType[] = [];
-  private turn: number = null;
-  private winner: PlayerType = null;
-  private tiles: [number, number, number] = [3, 5, 7];
-
-  public setId(id: string): void {
-    this.id = id;
-  }
-
-  public addPlayers(players: PlayerType[]): void {
-    players.forEach(player => {
-      this.players.push(player);
-    });
-  }
-
-  /**
-   * playerConnected
-   */
-  public playerConnected(player: PlayerType) {
-    let p: PlayerType = this.players.find(
-      (item: PlayerType) => item.id === player.id
-    );
-
-    p.socket = player.socket;
-
-    // This encapsulates the game in a socket.io room
-    p.socket.join(this.id);
-
-    p.socket.on("play", (turn: { tiles: [number, number, number] }) => {
-      this.tiles = turn.tiles;
-      this.turnPlayed(turn.tiles, p);
-    });
-
-    if (
-      this.players.length > 1 &&
-      !this.players.find((p: PlayerType) => !p.socket)
-    ) {
-      this.start();
-    }
-  }
-
-  /**
-   * removePlayer
-   */
-  public removePlayer(playerId: string): void {
-    this.players = this.players.filter(player => player.id !== playerId);
-  }
-
-  /**
-   * forfeit
-   */
-  public forfeit({ id }: PlayerType) {
-    let player = this.players.find(p => p.id === id);
-    let otherPlayer = this.players.find(p => p !== player);
-
-    this.winner = otherPlayer;
-    otherPlayer.socket.emit("end", { result: true, forfeit: true });
-    player.socket.emit("end", { result: false, forfeit: true });
-
-    return true;
-  }
-
-  public isEmpty(): boolean {
-    return !this.players.length;
-  }
-
-  public turnPlayed(tiles: number[], player: PlayerType) {
-    let otherPlayer: PlayerType = this.players.find((p, index) => {
-      if (p !== player) {
-        this.turn = index;
-        return true;
-      }
-      return false;
-    });
-    let sum = tiles.reduce((total, num) => total + Number(num), 0);
-    this.turn;
-    otherPlayer.socket.emit("turn", { tiles });
-
-    if (sum === 1) {
-      this.winner = player;
-      otherPlayer.socket.emit("end", { result: false });
-      player.socket.emit("end", { result: true });
-    } else if (!sum) {
-      this.winner = otherPlayer;
-      otherPlayer.socket.emit("end", { result: true });
-      player.socket.emit("end", { result: false });
-    }
-  }
-
-  public getWinner(): PlayerType {
-    return this.winner;
-  }
-
-  /**
-   * start
-   */
-  public start(): void {
-    this.turn = this.turn !== null ? this.turn : Math.round(Math.random());
-    this.players.forEach((player, index) =>
-      player.socket.emit("start", {
-        tiles: this.tiles,
-        turn: this.turn === index
-      })
-    );
-  }
 }
 
 class GameManager implements GameManagerType {
@@ -152,18 +29,18 @@ class GameManager implements GameManagerType {
     this.io = io;
   }
 
-  public registerPlayer(p: PlayerType) {
+  public registerPlayer(p: Player) {
     this.registeredPlayers.set(p.id, p);
   }
 
-  public removePlayer(p: PlayerType) {
+  public removePlayer(p: Player) {
     this.registeredPlayers.delete(p.id);
   }
 
   /**
    * addToWaitingLounge
    */
-  public addToWaitingLounge(p: PlayerType) {
+  public addToWaitingLounge(p: Player) {
     if (!this.waitingPlayers.size) {
       let gameId = this.setupGame([p]);
       this.waitingPlayers.set(gameId, [p]);
@@ -194,8 +71,8 @@ class GameManager implements GameManagerType {
   /**
    * pairPlayers
    */
-  public setupGame(playerArray: PlayerType[]) {
-    let game: GameInterface = new Game();
+  public setupGame(playerArray: Player[]) {
+    let game: Game = new Game();
     let gameId: string = guid();
     game.setId(gameId);
     game.addPlayers(playerArray);
@@ -204,8 +81,8 @@ class GameManager implements GameManagerType {
     return gameId;
   }
 
-  public playerConnected(player: PlayerType, gameId: string) {
-    let game: GameInterface = this.gameMap.get(gameId);
+  public playerConnected(player: Player, gameId: string) {
+    let game: Game = this.gameMap.get(gameId);
     if (!game) {
       console.log(
         `game ${gameId} does not exist. disconnecting ${player.name}: ${
@@ -231,15 +108,15 @@ class GameManager implements GameManagerType {
   /**
    * getGameWinner
    */
-  public getGameWinner(gameId: string): PlayerType {
-    let gameInstance: GameInterface = this.gameMap.get(gameId);
+  public getGameWinner(gameId: string): Player {
+    let gameInstance: Game = this.gameMap.get(gameId);
     if (gameInstance) {
       return gameInstance.getWinner();
     }
   }
 
-  public forfeitGame(gameId: string, p: PlayerType): void {
-    let gameInstance: GameInterface = this.gameMap.get(gameId);
+  public forfeitGame(gameId: string, p: Player): void {
+    let gameInstance: Game = this.gameMap.get(gameId);
     if (gameInstance) {
       gameInstance.forfeit(p);
     }
@@ -254,7 +131,7 @@ class GameManager implements GameManagerType {
    * leaveGame
    */
   public leaveGame(gameId: string, playerId: string): void {
-    let gameInstance: GameInterface = this.gameMap.get(gameId);
+    let gameInstance: Game = this.gameMap.get(gameId);
     gameInstance.removePlayer(playerId);
     if (gameInstance.isEmpty()) {
       this.gameMap.delete(gameId);
