@@ -8,17 +8,7 @@ import * as path from "path";
 
 import socketify from "./socket";
 
-import {
-  playRoute,
-  registerRoute,
-  validateRoute,
-  completeRoute,
-  sanitizeRoute,
-  renderRoute,
-  leaveRoute,
-  cancelRoute,
-  forfeitRoute
-} from "./routes";
+import { apiRouteHandler, renderRoute } from "./routes";
 
 // const debug = require("debug")("typescript-node:server");
 
@@ -41,23 +31,7 @@ app.set("view engine", "jade");
 
 app.use(express.static(__dirname));
 
-/** Live code */
-app.post("/register", registerRoute);
-
-app.post("/validate", validateRoute);
-
-/** Live code */
-app.post("/play", playRoute);
-
-app.post("/complete", completeRoute);
-
-app.post("/sanitize", sanitizeRoute);
-
-app.post("/leave", leaveRoute);
-
-app.post("/cancel", cancelRoute);
-
-app.post("/forfeit", forfeitRoute);
+app.use("/api", apiRouteHandler);
 
 /** Live code */
 app.get("/", renderRoute);

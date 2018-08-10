@@ -1,7 +1,7 @@
 import guid from "./guid";
 import * as socket from "socket.io";
 import { Map } from "core-js";
-import Player from "./Player";
+import { Player, ConnectedPlayer } from "./Player";
 import Game from "./Game";
 
 interface GameManagerType {
@@ -11,7 +11,7 @@ interface GameManagerType {
   forfeitGame(gameId: string, p: Player): void;
   addToWaitingLounge(p: Player): string;
   getGameWinner(gameId: string): Player;
-  playerConnected(p: Player, gameId: string): void;
+  playerConnected(p: ConnectedPlayer, gameId: string): void;
   setSocketServer(io: socket.Server): void;
   leaveGame(gameId: string, playerId: string): void;
   getGameCount(): number;
@@ -70,7 +70,7 @@ class GameManager implements GameManagerType {
   }
 
   /** Live code */
-  public playerConnected(player: Player, gameId: string) {
+  public playerConnected(player: ConnectedPlayer, gameId: string) {
     let game: Game = this.gameMap.get(gameId);
     if (!game) {
       console.log(
@@ -104,7 +104,7 @@ class GameManager implements GameManagerType {
     }
   }
 
-  public forfeitGame(gameId: string, p: Player): void {
+  public forfeitGame(gameId: string, p: ConnectedPlayer): void {
     let gameInstance: Game = this.gameMap.get(gameId);
     if (gameInstance) {
       gameInstance.forfeit(p);
@@ -117,9 +117,13 @@ class GameManager implements GameManagerType {
 
   public leaveGame(gameId: string, playerId: string): void {
     let gameInstance: Game = this.gameMap.get(gameId);
+
     gameInstance.removePlayer(playerId);
+    console.log(`Player ${playerId} has left`);
+
     if (gameInstance.isEmpty()) {
       this.gameMap.delete(gameId);
+      console.log(`Game ${gameId} has been deleted`);
       // In case the player cancels a game before anyone joins
       if (this.waitingPlayers.has(gameId)) {
         this.waitingPlayers.delete(gameId);

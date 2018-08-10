@@ -21,7 +21,7 @@ input {
   border: 1px solid gray;
   border-radius: 4px;
   font-size: 16px;
-  padding: 2px;
+  padding: 10px 5px;
 }
 
 input[type="button"] {
@@ -30,6 +30,7 @@ input[type="button"] {
   color: white;
   width: 120px;
   height: 30px;
+  padding: 0;
 }
 
 #container {
@@ -47,12 +48,16 @@ input[type="button"] {
   align-items: center;
 }
 
-#lobby > div {
+#stats {
   margin: 10px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: space-around;
+}
+
+#stats > div {
+  margin: 10px;
 }
 
 input.secondary-button {
@@ -73,7 +78,7 @@ input.serious-button {
   position: relative;
   padding-bottom: 40px;
   box-sizing: border-box;
-  height: calc(100% - 40px);
+  height: calc(100% - 60px);
 }
 
 .overlay {
@@ -94,9 +99,10 @@ input.serious-button {
   display: flex;
   flex-direction: column;
   padding: 4px;
-  height: 500px;
+  height: 450px;
   justify-content: center;
   border: 2px solid white;
+  position: relative;
 }
 
 .gamecontainer .tileColumn.selected {
@@ -105,8 +111,8 @@ input.serious-button {
 
 .gamecontainer .tileColumn span {
   background-color: rgb(105, 223, 193);
-  height: 60px;
-  width: 60px;
+  height: 50px;
+  width: 50px;
   opacity: 1;
   display: inline-block;
   margin: 5px;
@@ -118,7 +124,9 @@ input.serious-button {
 
 .gamecontainer .buttons {
   position: absolute;
-  bottom: 80px;
+  bottom: 60px;
+  width: 300px;
+  text-align: center;
 }
 
 .forfeit-container {
@@ -147,15 +155,6 @@ input.serious-button {
     width: 250px;
     height: 80px;
     margin: 20px;
-  }
-
-  #lobby > #stats {
-    display: flex;
-    flex-direction: column;
-  }
-
-  #stats > div {
-    margin: 10px;
   }
 
   .gamecontainer .tileColumn {

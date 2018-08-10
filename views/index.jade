@@ -6,10 +6,11 @@ block content
   #container
     - if (gameId)
       script(type='text/javascript' src='/public/javascripts/polyfill.min.js')
-      script(type='text/javascript' src='/public/javascripts/bundle.76c53.js')
+      script(type='text/javascript' src='/public/javascripts/bundle.1.js')
+      //- script(type='text/javascript' src='http://localhost:8080/bundle.js')
     - else if (name)
       #lobby
-        p Welcome #{name}
+        p Welcome, #{name}!
         div#stats
           div
             span Wins: 
@@ -20,10 +21,14 @@ block content
           div
             span Streak: 
             span= streak
+          div
+            span Longest Streak: 
+            span= longestStreak
         div
           input(type='button' id='playbutton' value='Play')
-          input(type='button' id='leavebutton' value='Leave')
+          input(type='button' class='serious-button' id='leavebutton' value='Leave')
     - else
-      input(type='text' id='playername' placeholder='Enter you name')
-      input(type='button' id='registerbutton' value='Register')  
+      #lobby
+        input(type='text' id='playername' placeholder='Enter you name')
+        input(type='button' id='registerbutton' value='Register')  
     

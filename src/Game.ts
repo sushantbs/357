@@ -1,18 +1,18 @@
-import Player from "./Player";
+import { Player, ConnectedPlayer } from "./Player";
 
 interface GameInterface {
   setId(id: string): void;
-  addPlayers(players: Player[]): void;
-  playerConnected(player: Player): void;
+  addPlayers(players: Player[]);
+  playerConnected(player: ConnectedPlayer): void;
   getWinner(): Player;
   removePlayer(playerId: string): void;
-  forfeit(p: Player): boolean;
+  forfeit(p: ConnectedPlayer): boolean;
   isEmpty(): boolean;
 }
 
 export default class Game implements GameInterface {
   private id: string;
-  private players: Player[] = [];
+  private players: (Player | ConnectedPlayer)[] = [];
   private turn: number = null;
   private winner: Player = null;
   private tiles: [number, number, number] = [3, 5, 7];
@@ -22,16 +22,14 @@ export default class Game implements GameInterface {
   }
 
   public addPlayers(players: Player[]): void {
-    players.forEach(player => {
-      this.players.push(player);
-    });
+    this.players = [...this.players, ...players];
   }
 
   /**
    * playerConnected
    */
-  public playerConnected(player: Player) {
-    let p: Player = this.players.find((item: Player) => item.id === player.id);
+  public playerConnected(player: ConnectedPlayer) {
+    let p = <ConnectedPlayer>this.players.find(item => item.id === player.id);
 
     p.socket = player.socket;
 
@@ -45,7 +43,7 @@ export default class Game implements GameInterface {
 
     if (
       this.players.length > 1 &&
-      !this.players.find((p: Player) => !p.socket)
+      !this.players.find((p: ConnectedPlayer) => !p.socket)
     ) {
       this.start();
     }
@@ -61,11 +59,14 @@ export default class Game implements GameInterface {
   /**
    * forfeit
    */
-  public forfeit({ id }: Player) {
-    let player = this.players.find(p => p.id === id);
-    let otherPlayer = this.players.find(p => p !== player);
+  public forfeit({ id }: ConnectedPlayer) {
+    let player = <ConnectedPlayer>this.players.find(p => p.id === id);
+    let otherPlayer = <ConnectedPlayer>this.players.find(p => p !== player);
+
+    console.log(`${player.name}: ${player.id} has forfeited`);
 
     this.winner = otherPlayer;
+
     otherPlayer.socket.emit("end", { result: true, forfeit: true });
     player.socket.emit("end", { result: false, forfeit: true });
 
@@ -76,8 +77,10 @@ export default class Game implements GameInterface {
     return !this.players.length;
   }
 
-  public turnPlayed(tiles: number[], player: Player) {
-    let otherPlayer: Player = this.players.find((p, index) => {
+  public turnPlayed(tiles: number[], player: ConnectedPlayer) {
+    console.log(`${player.name}: ${player.id} has played`);
+
+    let otherPlayer = <ConnectedPlayer>this.players.find((p, index) => {
       if (p !== player) {
         this.turn = index;
         return true;
@@ -85,7 +88,6 @@ export default class Game implements GameInterface {
       return false;
     });
     let sum = tiles.reduce((total, num) => total + Number(num), 0);
-    this.turn;
     otherPlayer.socket.emit("turn", { tiles });
 
     if (sum === 1) {
@@ -108,10 +110,11 @@ export default class Game implements GameInterface {
    */
   public start(): void {
     this.turn = this.turn !== null ? this.turn : Math.round(Math.random());
-    this.players.forEach((player, index) =>
+    this.players.forEach((player: ConnectedPlayer, index) =>
       player.socket.emit("start", {
         tiles: this.tiles,
-        turn: this.turn === index
+        turn: this.turn === index,
+        opponent: this.players[(index + 1) % 2].name
       })
     );
   }

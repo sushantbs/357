@@ -1,5 +1,5 @@
 // @ts-check
-import { RequestHandler, Request, Response } from "express";
+import { RequestHandler, Request, Response, Router } from "express";
 
 import guid from "../src/guid";
 import gameManager from "../src/GameManager";
@@ -19,11 +19,13 @@ interface SessionRequest extends Request {
   mySession: SessionObject;
 }
 
+export const apiRouteHandler = Router();
+
 export const renderRoute: RequestHandler = (
   req: SessionRequest,
   res: Response
 ) => {
-  let { name, gameId, wins, losses, streak } = req.mySession;
+  let { name, gameId, wins, losses, streak, longestStreak } = req.mySession;
   let gameCount = gameManager.getGameCount();
   res.render("index", {
     name,
@@ -31,7 +33,8 @@ export const renderRoute: RequestHandler = (
     gameCount,
     wins,
     losses,
-    streak
+    streak,
+    longestStreak
   });
 };
 
@@ -47,6 +50,7 @@ export const registerRoute: RequestHandler = (
   req.mySession.wins = 0;
   req.mySession.losses = 0;
   req.mySession.streak = 0;
+  req.mySession.longestStreak = 0;
 
   gameManager.registerPlayer({ name, id });
   res.send({
@@ -91,6 +95,9 @@ export const completeRoute: RequestHandler = (
     if (winner.id === id) {
       req.mySession.wins += 1;
       req.mySession.streak += 1;
+      if (req.mySession.longestStreak < req.mySession.streak) {
+        req.mySession.longestStreak = req.mySession.streak;
+      }
     } else {
       req.mySession.losses += 1;
       req.mySession.streak = 0;
@@ -147,3 +154,21 @@ export const cancelRoute: RequestHandler = (
   delete req.mySession.gameId;
   res.send({ success: true });
 };
+
+/** Live code */
+apiRouteHandler.post("/register", registerRoute);
+
+apiRouteHandler.post("/validate", validateRoute);
+
+/** Live code */
+apiRouteHandler.post("/play", playRoute);
+
+apiRouteHandler.post("/complete", completeRoute);
+
+apiRouteHandler.post("/sanitize", sanitizeRoute);
+
+apiRouteHandler.post("/leave", leaveRoute);
+
+apiRouteHandler.post("/cancel", cancelRoute);
+
+apiRouteHandler.post("/forfeit", forfeitRoute);

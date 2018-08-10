@@ -1,5 +1,10 @@
-export default interface PlayerType {
+import { Socket } from "socket.io";
+
+export interface Player {
   name: string;
   id: string;
-  socket?: any;
+}
+
+export interface ConnectedPlayer extends Player {
+  socket: Socket;
 }

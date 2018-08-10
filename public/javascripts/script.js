@@ -11,7 +11,7 @@ window.onload = function() {
       let playerName = document.getElementById("playername").value;
 
       if (playerName) {
-        let response = await fetch("/register", {
+        let response = await fetch("/api/register", {
           method: "post",
           headers: {
             "content-type": "application/json",
@@ -31,7 +31,7 @@ window.onload = function() {
 
   if (playButton) {
     playButton.addEventListener("click", async () => {
-      let response = await fetch("/validate", {
+      let response = await fetch("/api/validate", {
         method: "post",
         headers: {
           "content-type": "application/json",
@@ -43,7 +43,7 @@ window.onload = function() {
       let responseJson = await response.json();
 
       if (responseJson.allowConnection) {
-        response = await fetch("/play", {
+        response = await fetch("/api/play", {
           method: "post",
           headers: {
             "content-type": "application/json",
@@ -64,7 +64,7 @@ window.onload = function() {
   if (leaveButton) {
     leaveButton.addEventListener("click", async () => {
       try {
-        await fetch("/leave", {
+        await fetch("/api/leave", {
           method: "post",
           credentials: "same-origin"
         });

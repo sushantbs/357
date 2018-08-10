@@ -3,6 +3,7 @@
     "module": "commonjs",
     "lib": ["es2015"],
     "noImplicitAny": false,
+    "noStrictGenericChecks": true,
     "sourceMap": true,
     "moduleResolution": "node"
   },
