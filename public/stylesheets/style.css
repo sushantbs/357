@@ -169,6 +169,7 @@ input.serious-button {
 
   .gamecontainer .buttons {
     bottom: 280px;
+    width: 800px;
   }
 
   .forfeit-container {
