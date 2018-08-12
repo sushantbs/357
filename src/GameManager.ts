@@ -3,6 +3,7 @@ import * as socket from "socket.io";
 import { Map } from "core-js";
 import { Player, ConnectedPlayer } from "./Player";
 import Game from "./Game";
+import { SessionObject } from "../routes";
 
 interface GameManagerType {
   registerPlayer(p: Player): void;
@@ -14,12 +15,16 @@ interface GameManagerType {
   playerConnected(p: ConnectedPlayer, gameId: string): void;
   setSocketServer(io: socket.Server): void;
   leaveGame(gameId: string, playerId: string): void;
+  extractStatsFromSession(session: SessionObject): void;
   getGameCount(): number;
+  getGameStats(): { totalWins: any };
 }
 
 class GameManager implements GameManagerType {
   private io: socket.Server;
-
+  private stats: { totalWins: any } = {
+    totalWins: { count: 0, players: [] }
+  };
   private registeredPlayers: any = new Map();
   private waitingPlayers: any = new Map();
   private gameMap: any = new Map();
@@ -40,7 +45,7 @@ class GameManager implements GameManagerType {
   public addToWaitingLounge(p: Player) {
     if (!this.waitingPlayers.size) {
       let gameId = this.setupGame([p]);
-      this.waitingPlayers.set(gameId, [p]);
+      this.waitingPlayers.set(gameId, p);
       console.log(
         `Adding player ${p.name}: ${p.id} to the game ${gameId} in wait mode.`
       );
@@ -48,12 +53,18 @@ class GameManager implements GameManagerType {
     } else {
       let playerKeyVal: string[] = this.waitingPlayers.entries().next().value;
       let gameId: string = playerKeyVal[0];
-      this.waitingPlayers.delete(gameId);
-      console.log(
-        `Adding player ${p.name}: ${p.id} to the game ${gameId} in game mode.`
-      );
-      let game = this.gameMap.get(gameId);
-      game.addPlayers([p]);
+      let player: Player = this.waitingPlayers.get(gameId);
+
+      // Ensure player has been already added
+      if (player.id !== p.id) {
+        this.waitingPlayers.delete(gameId);
+        console.log(
+          `Adding player ${p.name}: ${p.id} to the game ${gameId} in game mode.`
+        );
+        let game = this.gameMap.get(gameId);
+        game.addPlayers([p]);
+      }
+
       return gameId;
     }
   }
@@ -80,9 +91,7 @@ class GameManager implements GameManagerType {
       );
       player.socket.disconnect();
     } else {
-      console.log(
-        `player ${player.name}: ${player.id} has connected to ${gameId}`
-      );
+      console.log(`${player.name}: ${player.id} has connected to ${gameId}`);
       game.playerConnected(player);
     }
   }
@@ -129,6 +138,32 @@ class GameManager implements GameManagerType {
         this.waitingPlayers.delete(gameId);
       }
     }
+  }
+
+  public extractStatsFromSession(session: SessionObject) {
+    let { wins, losses, streak, longestStreak, name, id } = session;
+
+    // track total wins
+    if (!this.stats.totalWins || wins > this.stats.totalWins.count) {
+      this.stats.totalWins = {
+        players: [
+          {
+            name,
+            id
+          }
+        ],
+        count: wins
+      };
+    } else if (wins === this.stats.totalWins.count) {
+      this.stats.totalWins.players.push({ name, id });
+    }
+  }
+
+  /**
+   * getGameStats
+   */
+  public getGameStats() {
+    return this.stats;
   }
 }
 

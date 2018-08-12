@@ -4,7 +4,7 @@ import { RequestHandler, Request, Response, Router } from "express";
 import guid from "../src/guid";
 import gameManager from "../src/GameManager";
 
-interface SessionObject {
+export interface SessionObject {
   name: string;
   id: string;
   wins: number;
@@ -15,28 +15,11 @@ interface SessionObject {
   destroy(): void;
 }
 
-interface SessionRequest extends Request {
+export interface SessionRequest extends Request {
   mySession: SessionObject;
 }
 
 export const apiRouteHandler = Router();
-
-export const renderRoute: RequestHandler = (
-  req: SessionRequest,
-  res: Response
-) => {
-  let { name, gameId, wins, losses, streak, longestStreak } = req.mySession;
-  let gameCount = gameManager.getGameCount();
-  res.render("index", {
-    name,
-    gameId,
-    gameCount,
-    wins,
-    losses,
-    streak,
-    longestStreak
-  });
-};
 
 export const registerRoute: RequestHandler = (
   req: SessionRequest,
@@ -53,25 +36,34 @@ export const registerRoute: RequestHandler = (
   req.mySession.longestStreak = 0;
 
   gameManager.registerPlayer({ name, id });
+
   res.send({
     success: true,
     payload: { name }
   });
 };
+apiRouteHandler.post("/register", registerRoute);
 
 /** Live code */
 export const playRoute: RequestHandler = (
   req: SessionRequest,
   res: Response
 ) => {
-  let { name, id } = req.mySession;
-  let gameId = gameManager.addToWaitingLounge({
-    name: name,
-    id: id
-  });
-  req.mySession.gameId = gameId;
-  res.send({ success: true, gameId });
+  let { name, id, gameId } = req.mySession;
+  if (gameId) {
+    if (!gameManager.hasGame(gameId)) {
+      delete req.mySession.gameId;
+    }
+  } else {
+    gameId = gameManager.addToWaitingLounge({
+      name: name,
+      id: id
+    });
+    req.mySession.gameId = gameId;
+    res.send({ success: true, gameId });
+  }
 };
+apiRouteHandler.post("/play", playRoute);
 
 export const validateRoute: RequestHandler = (
   req: SessionRequest,
@@ -89,16 +81,21 @@ export const completeRoute: RequestHandler = (
   req: SessionRequest,
   res: Response
 ) => {
-  let { id, gameId } = req.mySession;
+  let { name, id, gameId } = req.mySession;
   let winner = gameManager.getGameWinner(gameId);
+
+  console.log(`${name}: ${id} is checking for completion`);
   if (winner) {
     if (winner.id === id) {
+      console.log(`${name}: ${id} has completed the game as the winner`);
       req.mySession.wins += 1;
       req.mySession.streak += 1;
       if (req.mySession.longestStreak < req.mySession.streak) {
         req.mySession.longestStreak = req.mySession.streak;
       }
+      gameManager.extractStatsFromSession(req.mySession);
     } else {
+      console.log(`${name}: ${id} has completed the game as the loser`);
       req.mySession.losses += 1;
       req.mySession.streak = 0;
     }
@@ -111,6 +108,7 @@ export const completeRoute: RequestHandler = (
     res.send({ success: true });
   }
 };
+apiRouteHandler.post("/complete", completeRoute);
 
 export const sanitizeRoute: RequestHandler = (
   req: SessionRequest,
@@ -140,8 +138,8 @@ export const forfeitRoute: RequestHandler = (
   res: Response
 ) => {
   let { gameId, id, name } = req.mySession;
-
   gameManager.forfeitGame(gameId, { id, name });
+
   res.send({ success: true });
 };
 
@@ -155,15 +153,7 @@ export const cancelRoute: RequestHandler = (
   res.send({ success: true });
 };
 
-/** Live code */
-apiRouteHandler.post("/register", registerRoute);
-
 apiRouteHandler.post("/validate", validateRoute);
-
-/** Live code */
-apiRouteHandler.post("/play", playRoute);
-
-apiRouteHandler.post("/complete", completeRoute);
 
 apiRouteHandler.post("/sanitize", sanitizeRoute);
 

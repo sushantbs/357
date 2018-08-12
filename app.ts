@@ -7,9 +7,8 @@ import * as http from "http";
 import * as path from "path";
 
 import socketify from "./socket";
-
-import { apiRouteHandler, renderRoute } from "./routes";
-
+import { apiRouteHandler, SessionRequest } from "./routes";
+import gameManager from "./src/GameManager";
 // const debug = require("debug")("typescript-node:server");
 
 const app = express();
@@ -33,8 +32,30 @@ app.use(express.static(__dirname));
 
 app.use("/api", apiRouteHandler);
 
-/** Live code */
-app.get("/", renderRoute);
+app.get("/", (req: SessionRequest, res: express.Response) => {
+  let { name, gameId, wins, losses, streak, longestStreak } = req.mySession;
+  let gameCount = gameManager.getGameCount();
+  res.render("index", {
+    name,
+    gameId,
+    gameCount,
+    wins,
+    losses,
+    streak,
+    longestStreak
+  });
+});
+
+app.get("/leader", (req: SessionRequest, res: express.Response) => {
+  let gameCount = gameManager.getGameCount();
+  let gameStats = gameManager.getGameStats();
+
+  res.render("leader", {
+    gameCount,
+    wins: gameStats.totalWins.count,
+    names: gameStats.totalWins.players.map(({ name }) => name).join(`, `)
+  });
+});
 
 app.use(errorHandler());
 

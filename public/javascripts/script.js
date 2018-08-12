@@ -5,12 +5,19 @@ window.onload = function() {
   let registerButton = document.getElementById("registerbutton");
   let playButton = document.getElementById("playbutton");
   let leaveButton = document.getElementById("leavebutton");
+  let connectionInProgress = false;
 
   if (registerButton) {
     registerButton.addEventListener("click", async () => {
-      let playerName = document.getElementById("playername").value;
+      if (connectionInProgress) {
+        return;
+      }
 
-      if (playerName) {
+      let name = document.getElementById("playername").value;
+
+      if (name) {
+        connectionInProgress = true;
+
         let response = await fetch("/api/register", {
           method: "post",
           headers: {
@@ -18,9 +25,10 @@ window.onload = function() {
             accept: "application/json"
           },
           credentials: "same-origin",
-          body: JSON.stringify({ name: playerName })
+          body: JSON.stringify({ name })
         });
 
+        connectionInProgress = false;
         let responseJson = await response.json();
         responseJson.success && window.location.reload();
       } else {
@@ -30,20 +38,14 @@ window.onload = function() {
   }
 
   if (playButton) {
-    playButton.addEventListener("click", async () => {
-      let response = await fetch("/api/validate", {
-        method: "post",
-        headers: {
-          "content-type": "application/json",
-          accept: "application/json"
-        },
-        credentials: "same-origin"
-      });
+    playButton.addEventListener("click", async e => {
+      try {
+        if (connectionInProgress) {
+          return;
+        }
 
-      let responseJson = await response.json();
-
-      if (responseJson.allowConnection) {
-        response = await fetch("/api/play", {
+        connectionInProgress = true;
+        let response = await fetch("/api/validate", {
           method: "post",
           headers: {
             "content-type": "application/json",
@@ -53,10 +55,26 @@ window.onload = function() {
         });
 
         let responseJson = await response.json();
+        connectionInProgress = false;
+        if (responseJson.allowConnection) {
+          response = await fetch("/api/play", {
+            method: "post",
+            headers: {
+              "content-type": "application/json",
+              accept: "application/json"
+            },
+            credentials: "same-origin"
+          });
 
-        if (responseJson.gameId) {
-          window.location.reload();
+          let responseJson = await response.json();
+
+          if (responseJson.gameId) {
+            window.location.reload();
+          }
         }
+      } catch (err) {
+        console.error(err);
+        throw err;
       }
     });
   }
@@ -64,10 +82,16 @@ window.onload = function() {
   if (leaveButton) {
     leaveButton.addEventListener("click", async () => {
       try {
+        if (connectionInProgress) {
+          return;
+        }
+
+        connectionInProgress = true;
         await fetch("/api/leave", {
           method: "post",
           credentials: "same-origin"
         });
+        connectionInProgress = false;
 
         // let responseJson = await response.json();
         window.location.reload();

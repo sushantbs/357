@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  h1 GameRoom
+
+  #container
+    #lobby
+      div#stats
+        div
+          span Games in progress: 
+          span= gameCount
+        div
+          span Most Wins: 
+          span= wins
+        div
+          span Leaders: 
+          span= names
+    
