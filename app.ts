@@ -6,6 +6,9 @@ import * as sessions from "client-sessions";
 import * as http from "http";
 import * as path from "path";
 
+import * as memwatch from "memwatch-next";
+import { StatsInformation } from "memwatch-next";
+
 import socketify from "./socket";
 import { apiRouteHandler, SessionRequest } from "./routes";
 import gameManager from "./src/GameManager";
@@ -53,11 +56,21 @@ app.get("/leader", (req: SessionRequest, res: express.Response) => {
   res.render("leader", {
     gameCount,
     wins: gameStats.totalWins.count,
-    names: gameStats.totalWins.players.map(({ name }) => name).join(`, `)
+    names: gameStats.totalWins.players
+      .map(({ name }: { name: string }) => name)
+      .join(`, `)
   });
 });
 
 app.use(errorHandler());
+
+memwatch.on("stats", (stats: StatsInformation) => {
+  console.log(`
+    Estimated base: ${stats.estimated_base / (1024 * 1024)} mb
+    Current base: ${stats.current_base / (1024 * 1024)} mb
+    Stats info object: ${stats}
+  `);
+});
 
 /**
  * Get port from environment and store in Express.
