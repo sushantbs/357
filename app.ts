@@ -66,9 +66,9 @@ app.use(errorHandler());
 
 memwatch.on("stats", (stats: StatsInformation) => {
   console.log(`
-    Estimated base: ${stats.estimated_base / (1024 * 1024)} mb
-    Current base: ${stats.current_base / (1024 * 1024)} mb
-    Stats info object: ${stats}
+    Estimated base: ${(stats.estimated_base / (1024 * 1024)).toFixed(2)} mb
+    Current base: ${(stats.current_base / (1024 * 1024)).toFixed(2)} mb
+    Stats info object: ${JSON.stringify(stats)}
   `);
 });
 
