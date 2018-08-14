@@ -2,7 +2,7 @@ import { Player, ConnectedPlayer } from "./Player";
 
 interface GameInterface {
   setId(id: string): void;
-  addPlayers(players: Player[]);
+  addPlayers(players: Player[]): void;
   playerConnected(player: ConnectedPlayer): void;
   getWinner(): Player;
   removePlayer(playerId: string): void;

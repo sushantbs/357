@@ -8,7 +8,7 @@ function testLength(a: string, b: number): boolean {
 let b = testLength("test", 4);
 console.log(b);
 
-function vanilla(a, b) {
+function vanilla(a: string, b: string) {
   return a + b;
 }
 
