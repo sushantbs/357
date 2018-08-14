@@ -2,10 +2,10 @@
   "compilerOptions": {
     "module": "commonjs",
     "lib": ["es2015"],
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noStrictGenericChecks": true,
     "sourceMap": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*", "app.ts", "socket.ts", "public/**/*"]
+  "include": ["src/**/*", "app.ts", "socket.ts", "public/**/*", "snippet.ts"]
 }
