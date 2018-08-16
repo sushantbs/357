@@ -13,7 +13,7 @@ async function runLoadTest(contexts = 3) {
 
   await Promise.all(
     pageArr.map(page => {
-      return page.goto("https://ll357.herokuapp.com");
+      return page.goto("https://ll357.herokuapp.com", { timeout: 60000 });
     })
   );
 

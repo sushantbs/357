@@ -24,17 +24,17 @@ let tiger: Mammal = {
   endangered: true
 };
 
-enum aClass {
+enum BioClass {
   "Reptile",
   "Mammal"
 }
 
 interface Animal {
-  type: aClass;
+  type: BioClass;
   isAquatic(): boolean;
 }
 
-interface MammalInterface {
+interface MammalInterface extends Animal {
   legs: number;
   tail: boolean;
   endangered: boolean;
@@ -44,7 +44,7 @@ interface MammalInterface {
 class AnimalClass implements Animal {
   private aquatic: boolean;
 
-  public type: aClass;
+  public type: BioClass;
   public isAquatic(): boolean {
     return this.aquatic;
   }
@@ -56,6 +56,7 @@ class MammalClass extends AnimalClass implements MammalInterface {
   public legs: number;
   public tail: boolean;
   public endangered: boolean;
+  public extraProperty: boolean;
 
   public count() {
     return 3200;
@@ -68,3 +69,4 @@ class MammalClass extends AnimalClass implements MammalInterface {
 
 // properties and methods available on a variable is determined from the type;
 let panda = new MammalClass();
+panda.count();

@@ -20,7 +20,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-/** Live code: The client-sessions middleware */
+// client sessions middleware
 app.use(
   sessions({
     secret: "BadSecret",
