@@ -1,3 +1,5 @@
+/// <reference path="./typings.ts" />
+
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as cookieParser from "cookie-parser";
@@ -10,8 +12,9 @@ import * as memwatch from "memwatch-next";
 import { StatsInformation } from "memwatch-next";
 
 import socketify from "./socket";
-import { apiRouteHandler, SessionRequest } from "./routes";
+import { apiRouteHandler } from "./routes";
 import gameManager from "./src/GameManager";
+import { SessionRequest } from "./typings";
 // const debug = require("debug")("typescript-node:server");
 
 const app = express();

@@ -3,7 +3,7 @@ import * as socket from "socket.io";
 import { Map } from "core-js";
 import { Player, ConnectedPlayer } from "./Player";
 import Game from "./Game";
-import { SessionObject } from "../routes";
+import { SessionObject } from "../typings";
 
 interface GameManagerType {
   registerPlayer(p: Player): void;

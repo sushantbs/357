@@ -1,26 +1,11 @@
 // @ts-check
-import { RequestHandler, Request, Response, Router } from "express";
+import { RequestHandler, Response, Router } from "express";
+// import { SessionRequest } from "app-types";
 
 import guid from "../src/guid";
 import gameManager from "../src/GameManager";
-
-export interface SessionObject {
-  name: string;
-  id: string;
-  wins: number;
-  losses: number;
-  streak: number;
-  longestStreak: number;
-  gameId: string;
-  destroy(): void;
-}
-
-export interface SessionRequest extends Request {
-  mySession: SessionObject;
-}
-
+import { SessionRequest } from "../typings";
 export const apiRouteHandler = Router();
-
 export const registerRoute: RequestHandler = (
   req: SessionRequest,
   res: Response
