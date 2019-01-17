@@ -2,13 +2,13 @@ import guid from "./guid";
 import { Player, ConnectedPlayer } from "./Player";
 
 interface GameInterface {
-  setId(id: string): void;
+  // setId(id: string): void;
   setAccessKey(id: string): void;
   addPlayers(players: Player[]): void;
   playerConnected(player: ConnectedPlayer): void;
   getWinner(): Player;
   removePlayer(playerId: string): void;
-  forfeit(p: ConnectedPlayer): boolean;
+  // forfeit(p: ConnectedPlayer): boolean;
   isEmpty(): boolean;
 }
 
@@ -64,11 +64,8 @@ export default class Game implements GameInterface {
 
     // This encapsulates the game in a socket.io room
     p.socket.join(this.id);
-
-    p.socket.on("play", (turn: { tiles: [number, number, number] }) => {
-      this.tiles = turn.tiles;
-      this.turnPlayed(turn.tiles, p);
-    });
+    p.socket.on("play", (turn: any) => this.onTurnPlayed(turn));
+    p.socket.on("message", (message: string) => this.onPlayerMessage(message));
 
     if (
       this.players.length > 1 &&
@@ -77,6 +74,10 @@ export default class Game implements GameInterface {
       this.start();
     }
   }
+
+  public onTurnPlayed(turn: any) {}
+
+  public onPlayerMessage(message: string) {}
 
   /**
    * removePlayer
@@ -88,26 +89,25 @@ export default class Game implements GameInterface {
   /**
    * forfeit
    */
-  public forfeit({ id }: ConnectedPlayer) {
-    let player = <ConnectedPlayer>this.players.find(p => p.id === id);
-    let otherPlayer = <ConnectedPlayer>this.players.find(p => p !== player);
+  // public forfeit({ id }: ConnectedPlayer) {
+  //   let player = <ConnectedPlayer>this.players.find(p => p.id === id);
+  //   let otherPlayer = <ConnectedPlayer>this.players.find(p => p !== player);
 
-    console.log(`${player.name}: ${player.id} has forfeited`);
+  //   console.log(`${player.id} has forfeited`);
+  //   this.winner = otherPlayer;
 
-    this.winner = otherPlayer;
+  //   otherPlayer.socket.emit("end", { result: true, forfeit: true });
+  //   player.socket.emit("end", { result: false, forfeit: true });
 
-    otherPlayer.socket.emit("end", { result: true, forfeit: true });
-    player.socket.emit("end", { result: false, forfeit: true });
-
-    return true;
-  }
+  //   return true;
+  // }
 
   public isEmpty(): boolean {
     return !this.players.length;
   }
 
   public turnPlayed(tiles: number[], player: ConnectedPlayer) {
-    console.log(`${player.name}: ${player.id} has played`);
+    console.log(`${player}: ${player.id} has played`);
 
     let otherPlayer = <ConnectedPlayer>this.players.find((p, index) => {
       if (p !== player) {
@@ -141,9 +141,7 @@ export default class Game implements GameInterface {
     this.turn = this.turn !== null ? this.turn : Math.round(Math.random());
     this.players.forEach((player: ConnectedPlayer, index) =>
       player.socket.emit("start", {
-        tiles: this.tiles,
-        turn: this.turn === index,
-        opponent: this.players[(index + 1) % 2].name
+        turn: this.turn === index
       })
     );
   }

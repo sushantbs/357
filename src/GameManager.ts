@@ -12,7 +12,7 @@ interface GameManagerType {
   setupGame(players: Player[]): string;
   hasGame(gameId: string): boolean;
   removePlayer(p: Player): void;
-  forfeitGame(gameId: string, p: Player): void;
+  // forfeitGame(gameId: string, p: Player): void;
   addToWaitingLounge(p: Player): string;
   getGameWinner(gameId: string): Player;
   playerConnected(p: ConnectedPlayer, gameId: string): void;
@@ -56,9 +56,7 @@ class GameManager implements GameManagerType {
     if (!this.waitingPlayers.size) {
       let gameId = this.setupGame([p]);
       this.waitingPlayers.set(gameId, p);
-      console.log(
-        `Adding player ${p.name}: ${p.id} to the game ${gameId} in wait mode.`
-      );
+      console.log(`Adding player ${p.id} to the game ${gameId} in wait mode.`);
       return gameId;
     } else {
       let playerKeyVal: string[] = this.waitingPlayers.entries().next().value;
@@ -69,7 +67,7 @@ class GameManager implements GameManagerType {
       if (player.id !== p.id) {
         this.waitingPlayers.delete(gameId);
         console.log(
-          `Adding player ${p.name}: ${p.id} to the game ${gameId} in game mode.`
+          `Adding player ${p.id} to the game ${gameId} in game mode.`
         );
         let game = this.gameMap.get(gameId);
         game.addPlayers([p]);
@@ -86,16 +84,17 @@ class GameManager implements GameManagerType {
   /** Live code */
   public setupGame(playerArray: Player[]) {
     let game = new Game();
-    let gameId = guid();
-    while (this.gameMap.has(gameId)) {
-      gameId = guid();
+
+    while (this.gameMap.has(game.getId())) {
+      game = new Game();
     }
 
     let gameKey = accessKeygen();
     while (this.gameAccessKeyMap.has(gameKey)) {
       gameKey = accessKeygen();
     }
-    game.setId(gameId);
+
+    let gameId = game.getId();
     game.setAccessKey(gameKey);
     game.addPlayers(playerArray);
     this.gameMap.set(gameId, game);
@@ -108,14 +107,10 @@ class GameManager implements GameManagerType {
   public playerConnected(player: ConnectedPlayer, gameId: string) {
     let game: Game = this.gameMap.get(gameId);
     if (!game) {
-      console.log(
-        `game ${gameId} does not exist. disconnecting ${player.name}: ${
-          player.id
-        }`
-      );
+      console.log(`game ${gameId} does not exist. disconnecting ${player.id}`);
       player.socket.disconnect();
     } else {
-      console.log(`${player.name}: ${player.id} has connected to ${gameId}`);
+      console.log(`${player.id} has connected to ${gameId}`);
       game.playerConnected(player);
     }
   }
@@ -137,12 +132,12 @@ class GameManager implements GameManagerType {
     }
   }
 
-  public forfeitGame(gameId: string, p: ConnectedPlayer): void {
-    let gameInstance: Game = this.gameMap.get(gameId);
-    if (gameInstance) {
-      gameInstance.forfeit(p);
-    }
-  }
+  // public forfeitGame(gameId: string, p: ConnectedPlayer): void {
+  //   let gameInstance: Game = this.gameMap.get(gameId);
+  //   if (gameInstance) {
+  //     gameInstance.forfeit(p);
+  //   }
+  // }
 
   public hasGame(gameId: string) {
     return this.gameMap.has(gameId);
@@ -167,21 +162,21 @@ class GameManager implements GameManagerType {
   }
 
   public extractStatsFromSession(session: SessionObject) {
-    let { wins, losses, streak, longestStreak, name, id } = session;
+    let { wins, losses, streak, longestStreak, handle, id } = session;
 
     // track total wins
     if (!this.stats.totalWins || wins > this.stats.totalWins.count) {
       this.stats.totalWins = {
         players: [
           {
-            name,
+            handle,
             id
           }
         ],
         count: wins
       };
     } else if (wins === this.stats.totalWins.count) {
-      this.stats.totalWins.players.push({ name, id });
+      this.stats.totalWins.players.push({ handle, id });
     }
   }
 
