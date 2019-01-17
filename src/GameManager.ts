@@ -9,7 +9,7 @@ interface GameManagerType {
   registerPlayer(p: Player): void;
   getAccessKey(gameId: string): string;
   getGameByAccessKey(accessKey: string): Game;
-  setupGame(players: Player[]): string;
+  setupGame(type: string, players: Player[]): string;
   hasGame(gameId: string): boolean;
   removePlayer(p: Player): void;
   // forfeitGame(gameId: string, p: Player): void;
@@ -39,7 +39,7 @@ class GameManager implements GameManagerType {
   }
 
   public getAccessKey(gameId: string) {
-    let accessKey = gameId;
+    let accessKey = this.gameMap.get(gameId).getAccessKey();
     return accessKey;
   }
 
@@ -54,7 +54,7 @@ class GameManager implements GameManagerType {
   /** Live code */
   public addToWaitingLounge(p: Player) {
     if (!this.waitingPlayers.size) {
-      let gameId = this.setupGame([p]);
+      let gameId = this.setupGame(null, [p]);
       this.waitingPlayers.set(gameId, p);
       console.log(`Adding player ${p.id} to the game ${gameId} in wait mode.`);
       return gameId;
@@ -82,7 +82,7 @@ class GameManager implements GameManagerType {
   }
 
   /** Live code */
-  public setupGame(playerArray: Player[]) {
+  public setupGame(type: string, playerArray: Player[]) {
     let game = new Game();
 
     while (this.gameMap.has(game.getId())) {

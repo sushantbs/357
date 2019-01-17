@@ -57,7 +57,6 @@ export const userStatus: RequestHandler = (
     res.send({ status: "guest" });
   }
 };
-
 apiRouteHandler.get("/status", userStatus);
 
 export const createRoute: RequestHandler = (
@@ -67,7 +66,7 @@ export const createRoute: RequestHandler = (
   let { type } = req.body;
   let id = req.mySession.id || guid();
 
-  const gameId = gameManager.setupGame([{ id }]);
+  const gameId = gameManager.setupGame(type, [{ id }]);
   let accessKey = gameManager.getAccessKey(gameId);
 
   Object.assign(req.mySession, {
