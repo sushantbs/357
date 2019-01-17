@@ -8,8 +8,7 @@ import * as sessions from "client-sessions";
 import * as http from "http";
 import * as path from "path";
 
-import * as memwatch from "memwatch-next";
-import { StatsInformation } from "memwatch-next";
+import * as memwatch from "node-memwatch";
 
 import socketify from "./socket";
 import { apiRouteHandler } from "./routes";
@@ -39,11 +38,18 @@ app.use(express.static(__dirname));
 app.use("/api", apiRouteHandler);
 
 app.get("/", (req: SessionRequest, res: express.Response) => {
-  let { name, gameId, wins, losses, streak, longestStreak } = req.mySession;
+  let {
+    handle,
+    accessKey,
+    wins,
+    losses,
+    streak,
+    longestStreak
+  } = req.mySession;
   let gameCount = gameManager.getGameCount();
   res.render("index", {
-    name,
-    gameId,
+    handle,
+    accessKey,
     gameCount,
     wins,
     losses,
@@ -67,7 +73,7 @@ app.get("/leader", (req: SessionRequest, res: express.Response) => {
 
 app.use(errorHandler());
 
-memwatch.on("stats", (stats: StatsInformation) => {
+memwatch.on("stats", stats => {
   console.log(`
     Estimated base: ${(stats.estimated_base / (1024 * 1024)).toFixed(2)} mb
     Current base: ${(stats.current_base / (1024 * 1024)).toFixed(2)} mb
