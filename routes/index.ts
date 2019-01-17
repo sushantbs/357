@@ -1,149 +1,266 @@
 // @ts-check
-import { RequestHandler, Response, Router } from "express";
+import { RequestHandler, Response, Router, Request } from "express";
 // import { SessionRequest } from "app-types";
 
 import guid from "../src/guid";
 import gameManager from "../src/GameManager";
 import { SessionRequest } from "../typings";
 export const apiRouteHandler = Router();
-export const registerRoute: RequestHandler = (
+
+export const userStatus: RequestHandler = (
   req: SessionRequest,
   res: Response
 ) => {
-  let { name } = req.body;
-  let id = guid();
+  let { mySession } = req;
 
-  req.mySession.name = name;
-  req.mySession.id = id;
-  req.mySession.wins = 0;
-  req.mySession.losses = 0;
-  req.mySession.streak = 0;
-  req.mySession.longestStreak = 0;
+  if (mySession && mySession.id) {
+    let { handle, id, avatar, accessKey } = mySession;
 
-  gameManager.registerPlayer({ name, id });
+    if (accessKey) {
+      let game = gameManager.getGameByAccessKey(accessKey);
+
+      // if the game has a winner means the game has ended already
+      let hasWinner = game.getWinner();
+
+      if (hasWinner) {
+        Object.assign(mySession, {
+          handle,
+          id,
+          avatar,
+          accessKey: null
+        });
+
+        res.send({
+          status: "player",
+          handle,
+          id,
+          avatar
+        });
+      } else {
+        res.send({
+          status: "player",
+          handle,
+          id,
+          avatar,
+          accessKey
+        });
+      }
+    } else {
+      res.send({
+        status: "player",
+        handle,
+        id,
+        avatar
+      });
+    }
+  } else {
+    res.send({ status: "guest" });
+  }
+};
+
+apiRouteHandler.get("/status", userStatus);
+
+export const createRoute: RequestHandler = (
+  req: SessionRequest,
+  res: Response
+) => {
+  let { type } = req.body;
+  let id = req.mySession.id || guid();
+
+  const gameId = gameManager.setupGame([{ id }]);
+  let accessKey = gameManager.getAccessKey(gameId);
+
+  Object.assign(req.mySession, {
+    id,
+    isCreator: true,
+    accessKey: accessKey
+  });
+
+  res.send({ success: true, accessKey });
+};
+apiRouteHandler.post("/create", createRoute);
+
+export const joinRoute: RequestHandler = (
+  req: SessionRequest,
+  res: Response
+) => {
+  let { accessKey } = req.body;
+
+  let { id } = req.mySession;
+  id = id || guid();
+
+  let game = gameManager.getGameByAccessKey(accessKey);
+  if (game) {
+    // if the game has a winner means the game has ended already
+    let hasWinner = game.getWinner();
+
+    if (hasWinner) {
+      Object.assign(req.mySession, {
+        id,
+        accessKey: null
+      });
+
+      res.send({
+        status: "error",
+        message: "Game has ended"
+      });
+    } else {
+      let playerAdded: boolean = game.addPlayer({ id });
+      if (playerAdded) {
+        Object.assign(req.mySession, {
+          id,
+          accessKey,
+          isCreator: false
+        });
+
+        res.send({
+          status: "player",
+          accessKey
+        });
+      } else {
+        // player already added to the game
+        // but gameId doesn't exist on the session object. What do we do?
+      }
+    }
+  }
+};
+apiRouteHandler.post("/join", joinRoute);
+
+export const updateProfileRoute: RequestHandler = (
+  req: SessionRequest,
+  res: Response
+) => {
+  let { avatar, handle, bio } = req.body;
+  Object.assign(req.mySession, {
+    avatar,
+    handle,
+    bio
+  });
 
   res.send({
-    success: true,
-    payload: { name }
+    status: "player",
+    avatar,
+    handle,
+    bio
   });
 };
-apiRouteHandler.post("/register", registerRoute);
-
-/** Live code */
-export const playRoute: RequestHandler = (
-  req: SessionRequest,
-  res: Response
-) => {
-  let { name, id, gameId } = req.mySession;
-  if (gameId) {
-    if (!gameManager.hasGame(gameId)) {
-      delete req.mySession.gameId;
-    }
-  } else {
-    gameId = gameManager.addToWaitingLounge({
-      name: name,
-      id: id
-    });
-    req.mySession.gameId = gameId;
-    res.send({ success: true, gameId });
-  }
-};
-apiRouteHandler.post("/play", playRoute);
-
-export const validateRoute: RequestHandler = (
-  req: SessionRequest,
-  res: Response
-) => {
-  let { name } = req.mySession;
-
-  // in a real app this endpoint can be used to pass a token
-  // that can be cross verified when the socket connection is being made.
-  // For now, in the browser, we trust.
-  res.send({ allowConnection: Boolean(name) });
-};
-
-export const completeRoute: RequestHandler = (
-  req: SessionRequest,
-  res: Response
-) => {
-  let { name, id, gameId } = req.mySession;
-  let winner = gameManager.getGameWinner(gameId);
-
-  console.log(`${name}: ${id} is checking for completion`);
-  if (winner) {
-    if (winner.id === id) {
-      console.log(`${name}: ${id} has completed the game as the winner`);
-      req.mySession.wins += 1;
-      req.mySession.streak += 1;
-      if (req.mySession.longestStreak < req.mySession.streak) {
-        req.mySession.longestStreak = req.mySession.streak;
-      }
-      gameManager.extractStatsFromSession(req.mySession);
-    } else {
-      console.log(`${name}: ${id} has completed the game as the loser`);
-      req.mySession.losses += 1;
-      req.mySession.streak = 0;
-    }
-
-    gameManager.leaveGame(gameId, id);
-    delete req.mySession.gameId;
-
-    res.send({ success: true });
-  } else {
-    res.send({ success: true });
-  }
-};
-apiRouteHandler.post("/complete", completeRoute);
-
-export const sanitizeRoute: RequestHandler = (
-  req: SessionRequest,
-  res: Response
-) => {
-  let { id, name, gameId } = req.mySession;
-  gameManager.registerPlayer({ id, name });
-  if (!gameManager.hasGame(gameId)) {
-    delete req.mySession.gameId;
-  }
-  res.send({ success: true });
-};
+apiRouteHandler.put("/profile", updateProfileRoute);
 
 export const leaveRoute: RequestHandler = (
   req: SessionRequest,
   res: Response
 ) => {
-  let { id, name } = req.mySession;
+  let { id } = req.mySession;
 
-  gameManager.removePlayer({ id, name });
+  gameManager.removePlayer({ id });
+
   req.mySession.destroy();
-  res.send({ success: true });
+  res.send({ status: "guest" });
 };
-
-export const forfeitRoute: RequestHandler = (
-  req: SessionRequest,
-  res: Response
-) => {
-  let { gameId, id, name } = req.mySession;
-  gameManager.forfeitGame(gameId, { id, name });
-
-  res.send({ success: true });
-};
-
-export const cancelRoute: RequestHandler = (
-  req: SessionRequest,
-  res: Response
-) => {
-  let { gameId, id } = req.mySession;
-  gameManager.leaveGame(gameId, id);
-  delete req.mySession.gameId;
-  res.send({ success: true });
-};
-
-apiRouteHandler.post("/validate", validateRoute);
-
-apiRouteHandler.post("/sanitize", sanitizeRoute);
-
 apiRouteHandler.post("/leave", leaveRoute);
 
-apiRouteHandler.post("/cancel", cancelRoute);
+// /** Live code */
+// export const playRoute: RequestHandler = (
+//   req: SessionRequest,
+//   res: Response
+// ) => {
+//   let { name, id, gameId } = req.mySession;
+//   if (gameId) {
+//     if (!gameManager.hasGame(gameId)) {
+//       delete req.mySession.gameId;
+//     }
+//   } else {
+//     gameId = gameManager.addToWaitingLounge({
+//       name: name,
+//       id: id
+//     });
+//     req.mySession.gameId = gameId;
+//     res.send({ success: true, gameId });
+//   }
+// };
+// apiRouteHandler.post("/play", playRoute);
 
-apiRouteHandler.post("/forfeit", forfeitRoute);
+// export const validateRoute: RequestHandler = (
+//   req: SessionRequest,
+//   res: Response
+// ) => {
+//   let { name } = req.mySession;
+
+//   // in a real app this endpoint can be used to pass a token
+//   // that can be cross verified when the socket connection is being made.
+//   // For now, in the browser, we trust.
+//   res.send({ allowConnection: Boolean(name) });
+// };
+
+// export const completeRoute: RequestHandler = (
+//   req: SessionRequest,
+//   res: Response
+// ) => {
+//   let { name, id, gameId } = req.mySession;
+//   let winner = gameManager.getGameWinner(gameId);
+
+//   console.log(`${name}: ${id} is checking for completion`);
+//   if (winner) {
+//     if (winner.id === id) {
+//       console.log(`${name}: ${id} has completed the game as the winner`);
+//       req.mySession.wins += 1;
+//       req.mySession.streak += 1;
+//       if (req.mySession.longestStreak < req.mySession.streak) {
+//         req.mySession.longestStreak = req.mySession.streak;
+//       }
+//       gameManager.extractStatsFromSession(req.mySession);
+//     } else {
+//       console.log(`${name}: ${id} has completed the game as the loser`);
+//       req.mySession.losses += 1;
+//       req.mySession.streak = 0;
+//     }
+
+//     gameManager.leaveGame(gameId, id);
+//     delete req.mySession.gameId;
+
+//     res.send({ success: true });
+//   } else {
+//     res.send({ success: true });
+//   }
+// };
+// apiRouteHandler.post("/complete", completeRoute);
+
+// export const sanitizeRoute: RequestHandler = (
+//   req: SessionRequest,
+//   res: Response
+// ) => {
+//   let { id, name, gameId } = req.mySession;
+//   gameManager.registerPlayer({ id, name });
+//   if (!gameManager.hasGame(gameId)) {
+//     delete req.mySession.gameId;
+//   }
+//   res.send({ success: true });
+// };
+
+// export const forfeitRoute: RequestHandler = (
+//   req: SessionRequest,
+//   res: Response
+// ) => {
+//   let { gameId, id, name } = req.mySession;
+//   gameManager.forfeitGame(gameId, { id, name });
+
+//   res.send({ success: true });
+// };
+
+// export const cancelRoute: RequestHandler = (
+//   req: SessionRequest,
+//   res: Response
+// ) => {
+//   let { gameId, id } = req.mySession;
+//   gameManager.leaveGame(gameId, id);
+//   delete req.mySession.gameId;
+//   res.send({ success: true });
+// };
+
+// apiRouteHandler.post("/validate", validateRoute);
+
+// apiRouteHandler.post("/sanitize", sanitizeRoute);
+
+// apiRouteHandler.post("/cancel", cancelRoute);
+
+// apiRouteHandler.post("/forfeit", forfeitRoute);

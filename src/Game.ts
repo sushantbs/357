@@ -1,7 +1,9 @@
+import guid from "./guid";
 import { Player, ConnectedPlayer } from "./Player";
 
 interface GameInterface {
   setId(id: string): void;
+  setAccessKey(id: string): void;
   addPlayers(players: Player[]): void;
   playerConnected(player: ConnectedPlayer): void;
   getWinner(): Player;
@@ -12,15 +14,42 @@ interface GameInterface {
 
 export default class Game implements GameInterface {
   private id: string;
+  private accessKey: string;
   private players: (Player | ConnectedPlayer)[] = [];
   private turn: number = null;
   private winner: Player = null;
-  private tiles: [number, number, number] = [3, 5, 7];
 
-  public setId(id: string): void {
-    this.id = id;
+  constructor() {
+    this.id = guid();
   }
 
+  // public setId(id: string): void {
+  //   this.id = id;
+  // }
+
+  /**
+   * getId
+   */
+  public getId(): string {
+    return this.id;
+  }
+
+  public setAccessKey(accessKey: string): void {
+    this.accessKey = accessKey;
+  }
+
+  public getAccessKey(): string {
+    return this.accessKey;
+  }
+
+  public addPlayer(player: Player): boolean {
+    if (!this.players.find(p => p.id === player.id)) {
+      this.players = [...this.players, player];
+      return true;
+    } else {
+      return false;
+    }
+  }
   public addPlayers(players: Player[]): void {
     this.players = [...this.players, ...players];
   }

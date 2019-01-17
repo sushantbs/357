@@ -5,13 +5,15 @@
 import { Request } from "express";
 
 export interface SessionObject {
-  name: string;
+  handle: string;
   id: string;
+  avatar: string;
   wins: number;
   losses: number;
   streak: number;
   longestStreak: number;
-  gameId: string;
+  accessKey: string;
+  isCreator: boolean;
   destroy(): void;
 }
 

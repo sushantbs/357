@@ -1,12 +1,15 @@
-import guid from "./guid";
+import guid, { accessKeygen } from "./guid";
 import * as socket from "socket.io";
 import { Map } from "core-js";
 import { Player, ConnectedPlayer } from "./Player";
 import Game from "./Game";
 import { SessionObject } from "../typings";
-
+import { access } from "fs";
 interface GameManagerType {
   registerPlayer(p: Player): void;
+  getAccessKey(gameId: string): string;
+  getGameByAccessKey(accessKey: string): Game;
+  setupGame(players: Player[]): string;
   hasGame(gameId: string): boolean;
   removePlayer(p: Player): void;
   forfeitGame(gameId: string, p: Player): void;
@@ -27,10 +30,17 @@ class GameManager implements GameManagerType {
   };
   private registeredPlayers: any = new Map();
   private waitingPlayers: any = new Map();
-  private gameMap: any = new Map();
+  private gameMap: Map<string, Game> = new Map();
+  private gameAccessKeyMap: Map<string, Game> = new Map();
+  private accessKeyMap: Map<string, string> = new Map();
 
   public setSocketServer(io: socket.Server) {
     this.io = io;
+  }
+
+  public getAccessKey(gameId: string) {
+    let accessKey = gameId;
+    return accessKey;
   }
 
   public registerPlayer(p: Player) {
@@ -69,13 +79,27 @@ class GameManager implements GameManagerType {
     }
   }
 
+  public getGameByAccessKey(accessKey: string): Game {
+    return this.gameAccessKeyMap.get(accessKey);
+  }
+
   /** Live code */
   public setupGame(playerArray: Player[]) {
-    let game: Game = new Game();
-    let gameId: string = guid();
+    let game = new Game();
+    let gameId = guid();
+    while (this.gameMap.has(gameId)) {
+      gameId = guid();
+    }
+
+    let gameKey = accessKeygen();
+    while (this.gameAccessKeyMap.has(gameKey)) {
+      gameKey = accessKeygen();
+    }
     game.setId(gameId);
+    game.setAccessKey(gameKey);
     game.addPlayers(playerArray);
     this.gameMap.set(gameId, game);
+    this.gameAccessKeyMap.set(gameKey, game);
 
     return gameId;
   }
@@ -130,8 +154,10 @@ class GameManager implements GameManagerType {
     gameInstance.removePlayer(playerId);
     console.log(`Player ${playerId} has left`);
 
+    let accessKey = gameInstance.getAccessKey();
     if (gameInstance.isEmpty()) {
       this.gameMap.delete(gameId);
+      this.gameAccessKeyMap.delete(accessKey);
       console.log(`Game ${gameId} has been deleted`);
       // In case the player cancels a game before anyone joins
       if (this.waitingPlayers.has(gameId)) {

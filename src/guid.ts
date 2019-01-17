@@ -8,4 +8,18 @@ function guid() {
   return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
 }
 
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789S";
+export function accessKeygen() {
+  let accessKeyGenerator = [
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random()
+  ];
+  return accessKeyGenerator
+    .map(num => alphabet[Math.floor(num * alphabet.length)])
+    .join("");
+}
+
 export default guid;
