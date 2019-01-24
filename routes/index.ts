@@ -18,18 +18,26 @@ export const userStatus: RequestHandler = (
 
     if (accessKey) {
       let game = gameManager.getGameByAccessKey(accessKey);
+      if (!game) {
+        // access key is not valid.
+        // possibly due to a server restart in dev.
+        // in prod this would be an incident
+        mySession.accessKey = null;
+        res.send({
+          status: "player",
+          handle,
+          id,
+          avatar
+        });
+
+        return;
+      }
 
       // if the game has a winner means the game has ended already
       let hasWinner = game.getWinner();
 
       if (hasWinner) {
-        Object.assign(mySession, {
-          handle,
-          id,
-          avatar,
-          accessKey: null
-        });
-
+        mySession.accessKey = null;
         res.send({
           status: "player",
           handle,
