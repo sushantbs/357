@@ -72,9 +72,12 @@ export const createRoute: RequestHandler = (
   res: Response
 ) => {
   let { type } = req.body;
-  let id = req.mySession.id || guid();
+  let { avatar, handle, id } = req.mySession;
+  id = id || guid();
 
-  const gameId = gameManager.setupGame(type, [{ id }]);
+  const gameId = gameManager.setupGame(type, [
+    { id, avatar, handle, rtcReady: false }
+  ]);
   let accessKey = gameManager.getAccessKey(gameId);
 
   Object.assign(req.mySession, {
@@ -93,7 +96,7 @@ export const joinRoute: RequestHandler = (
 ) => {
   let { accessKey } = req.body;
 
-  let { id } = req.mySession;
+  let { id, avatar, handle } = req.mySession;
   id = id || guid();
 
   let game = gameManager.getGameByAccessKey(accessKey);
@@ -112,7 +115,12 @@ export const joinRoute: RequestHandler = (
         message: "Game has ended"
       });
     } else {
-      let playerAdded: boolean = game.addPlayer({ id });
+      let playerAdded: boolean = game.addPlayer({
+        id,
+        avatar,
+        handle,
+        rtcReady: false
+      });
       if (playerAdded) {
         Object.assign(req.mySession, {
           id,
@@ -122,6 +130,9 @@ export const joinRoute: RequestHandler = (
 
         res.send({
           status: "player",
+          id,
+          handle,
+          avatar,
           accessKey
         });
       } else {
@@ -138,6 +149,7 @@ export const updateProfileRoute: RequestHandler = (
   res: Response
 ) => {
   let { avatar, handle, bio } = req.body;
+  let { id } = req.mySession;
   Object.assign(req.mySession, {
     avatar,
     handle,
@@ -146,6 +158,7 @@ export const updateProfileRoute: RequestHandler = (
 
   res.send({
     status: "player",
+    id,
     avatar,
     handle,
     bio
@@ -157,12 +170,12 @@ export const leaveRoute: RequestHandler = (
   req: SessionRequest,
   res: Response
 ) => {
-  let { id } = req.mySession;
+  let { id, accessKey } = req.mySession;
 
-  gameManager.removePlayer({ id });
+  gameManager.removePlayer(id, accessKey);
 
-  req.mySession.destroy();
-  res.send({ status: "guest" });
+  delete req.mySession.accessKey;
+  res.send({ success: true, status: "player" });
 };
 apiRouteHandler.post("/leave", leaveRoute);
 

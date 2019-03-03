@@ -6,7 +6,7 @@ import { util } from "client-sessions";
 let cookieMap: any = new WeakMap();
 
 export default function(server: Server) {
-  const io = socket(server);
+  const io = socket(server, { path: "/api/socket" });
 
   io.use((socket, next) => {
     if (socket.request.headers.cookie) {
@@ -31,23 +31,28 @@ export default function(server: Server) {
     let cookieObj = cookieMap.get(socket.request);
 
     if (cookieObj.mySession) {
+      // read the session cookie
       let { content } = util.decode(
         { cookieName: "mySession", secret: "BadSecret" },
         cookieObj.mySession
       );
-      let { id } = content;
-      if (content.id && content.gameId) {
+      let { id, avatar, handle } = content;
+      if (content.id && content.accessKey) {
         gameManager.playerConnected(
           {
             id,
+            avatar,
+            handle,
+            rtcReady: false,
             socket
           },
-          content.gameId
+          content.accessKey
         );
       } else {
         socket.disconnect();
       }
     } else {
+      // No session cookie
       socket.disconnect();
     }
   });

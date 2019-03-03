@@ -8,6 +8,7 @@ interface GameInterface {
   playerConnected(player: ConnectedPlayer): void;
   getWinner(): Player;
   removePlayer(playerId: string): void;
+  broadcastPlayerList(): void;
   // forfeit(p: ConnectedPlayer): boolean;
   isEmpty(): boolean;
 }
@@ -50,6 +51,7 @@ export default class Game implements GameInterface {
       return false;
     }
   }
+
   public addPlayers(players: Player[]): void {
     this.players = [...this.players, ...players];
   }
@@ -61,29 +63,87 @@ export default class Game implements GameInterface {
     let p = <ConnectedPlayer>this.players.find(item => item.id === player.id);
 
     p.socket = player.socket;
+    p.avatar = player.avatar;
+    p.handle = player.handle;
 
     // This encapsulates the game in a socket.io room
     p.socket.join(this.id);
-    p.socket.on("play", (turn: any) => this.onTurnPlayed(turn));
-    p.socket.on("message", (message: string) => this.onPlayerMessage(message));
 
-    if (
-      this.players.length > 1 &&
-      !this.players.find((p: ConnectedPlayer) => !p.socket)
-    ) {
-      this.start();
-    }
+    console.log("broadcast player list");
+    this.broadcastPlayerList();
+
+    p.socket.on("turn", (turn: any) => this.onTurnPlayed(turn));
+    p.socket.on("message", (message: string) =>
+      this.onPlayerMessage(p.id, message)
+    );
+
+    p.socket.on("player", ({ avatar, handle, rtcReady }) => {
+      Object.assign(p, { avatar, handle, rtcReady });
+      this.broadcastPlayerList();
+    });
+
+    p.socket.on("icecandidate", payload =>
+      (<ConnectedPlayer[]>this.players).forEach(
+        player => player.socket && player.socket.emit("icecandidate", payload)
+      )
+    );
+
+    p.socket.on("rtcOffer", ({ offerBy, offerTo, description }) => {
+      const player = (<ConnectedPlayer[]>this.players).find(
+        player => player.id === offerTo
+      );
+      player.socket &&
+        player.socket.emit("rtcOffer", { offerBy, offerTo, description });
+    });
+
+    p.socket.on("rtcAnswer", ({ answerBy, answerTo, description }) => {
+      const player = (<ConnectedPlayer[]>this.players).find(
+        player => player.id === answerTo
+      );
+      player.socket &&
+        player.socket.emit("rtcAnswer", { answerBy, answerTo, description });
+    });
+  }
+
+  public broadcastPlayerList() {
+    let connectedPlayers = (<ConnectedPlayer[]>this.players).filter(player =>
+      Boolean(player.socket)
+    );
+
+    let playerListToSend = connectedPlayers.map(
+      ({ id, avatar, handle, rtcReady }) => ({
+        id,
+        avatar,
+        handle,
+        rtcReady
+      })
+    );
+
+    connectedPlayers.forEach(player =>
+      player.socket.emit("players", playerListToSend)
+    );
   }
 
   public onTurnPlayed(turn: any) {}
 
-  public onPlayerMessage(message: string) {}
+  public onPlayerMessage(playerId: string, message: string) {
+    const payload = { text: message, author: playerId };
+    (<ConnectedPlayer[]>this.players).forEach(
+      p => p.socket && p.socket.emit("message", payload)
+    );
+  }
 
   /**
    * removePlayer
    */
   public removePlayer(playerId: string): void {
-    this.players = this.players.filter(player => player.id !== playerId);
+    this.players = (<ConnectedPlayer[]>this.players).filter(player => {
+      if (player.id === playerId) {
+        player.socket && player.socket.disconnect();
+      } else {
+        return true;
+      }
+    });
   }
 
   /**
@@ -138,7 +198,11 @@ export default class Game implements GameInterface {
    * start
    */
   public start(): void {
-    this.turn = this.turn !== null ? this.turn : Math.round(Math.random());
+    this.turn =
+      this.turn !== null
+        ? this.turn
+        : Math.round(Math.random() * this.players.length);
+
     this.players.forEach((player: ConnectedPlayer, index) =>
       player.socket.emit("start", {
         turn: this.turn === index

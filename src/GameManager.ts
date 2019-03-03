@@ -11,7 +11,7 @@ interface GameManagerType {
   getGameByAccessKey(accessKey: string): Game;
   setupGame(type: string, players: Player[]): string;
   hasGame(gameId: string): boolean;
-  removePlayer(p: Player): void;
+  removePlayer(playerId: string, accessKey: string): void;
   // forfeitGame(gameId: string, p: Player): void;
   addToWaitingLounge(p: Player): string;
   getGameWinner(gameId: string): Player;
@@ -28,7 +28,7 @@ class GameManager implements GameManagerType {
   private stats: { totalWins: any } = {
     totalWins: { count: 0, players: [] }
   };
-  private registeredPlayers: any = new Map();
+  private registeredPlayers: Map<string, Player> = new Map();
   private waitingPlayers: any = new Map();
   private gameMap: Map<string, Game> = new Map();
   private gameAccessKeyMap: Map<string, Game> = new Map();
@@ -47,8 +47,11 @@ class GameManager implements GameManagerType {
     this.registeredPlayers.set(p.id, p);
   }
 
-  public removePlayer(p: Player) {
-    this.registeredPlayers.delete(p.id);
+  public removePlayer(playerId: string, accessKey: string) {
+    this.registeredPlayers.delete(playerId);
+
+    const game = this.getGameByAccessKey(accessKey);
+    game.removePlayer(playerId);
   }
 
   /** Live code */
@@ -103,14 +106,17 @@ class GameManager implements GameManagerType {
     return gameId;
   }
 
-  /** Live code */
-  public playerConnected(player: ConnectedPlayer, gameId: string) {
-    let game: Game = this.gameMap.get(gameId);
+  public playerConnected(player: ConnectedPlayer, accessKey: string) {
+    let game: Game = this.gameAccessKeyMap.get(accessKey);
     if (!game) {
-      console.log(`game ${gameId} does not exist. disconnecting ${player.id}`);
+      console.log(
+        `game with access key ${accessKey} does not exist. disconnecting ${
+          player.id
+        }`
+      );
       player.socket.disconnect();
     } else {
-      console.log(`${player.id} has connected to ${gameId}`);
+      console.log(`${player.id} has connected to ${accessKey}`);
       game.playerConnected(player);
     }
   }
