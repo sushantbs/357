@@ -6,7 +6,7 @@ import { util } from "client-sessions";
 let cookieMap: any = new WeakMap();
 
 export default function(server: Server) {
-  const io = socket(server, { path: "/socket" });
+  const io = socket(server, { path: "/api/socket" });
 
   io.use((socket, next) => {
     if (socket.request.headers.cookie) {
