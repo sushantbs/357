@@ -22,6 +22,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+app.use(function(req, res, next) {
+  console.log("Headers: ", JSON.stringify(req.headers));
+  next();
+});
+
 // client sessions middleware
 app.use(
   sessions({
