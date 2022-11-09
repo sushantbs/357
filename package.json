@@ -32,7 +32,7 @@
     "typescript": "^2.9.2"
   },
   "devDependencies": {
-    "preact-cli": "^2.2.1",
+    "preact-cli": "^3.4.1",
     "puppeteer": "^1.7.0",
     "ts-node-dev": "^1.0.0-pre.26"
   }
